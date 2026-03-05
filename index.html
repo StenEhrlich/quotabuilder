@@ -437,13 +437,37 @@ async function fetchYears() {
     probeKeys.forEach((k, i) => { latestYears[k] = results[i]; });
     // employ and urban share lfsa_pgauws
     latestYears['urban'] = latestYears['employ'];
-    // Update badges
+    extraLatestYears = latestYears;
+    // Update badges and apply year constraints
     for (const [key, yr] of Object.entries(latestYears)) {
       const badge = document.getElementById('yr_' + key);
       if (badge) badge.textContent = yr ? `latest: ${yr}` : 'N/A';
     }
+    updateExtraCheckboxes();
   } catch (e) {
     showStatus('error', 'Failed to load: ' + e.message);
+  }
+}
+
+let extraLatestYears = {};
+
+// Disable/enable checkboxes based on selected year
+function updateExtraCheckboxes() {
+  const selectedYear = yearEl.value;
+  for (const cb of document.querySelectorAll('input[name="extra"]')) {
+    const key = cb.value;
+    const latestYr = extraLatestYears[key];
+    const label = cb.closest('label');
+    if (latestYr && selectedYear > latestYr) {
+      cb.checked = false;
+      cb.disabled = true;
+      label.style.opacity = '0.4';
+      label.title = `No data for ${selectedYear} (latest: ${latestYr})`;
+    } else {
+      cb.disabled = false;
+      label.style.opacity = '';
+      label.title = '';
+    }
   }
 }
 
@@ -888,6 +912,7 @@ buildBtn.addEventListener('click', async () => {
   }
 });
 
+yearEl.addEventListener('change', updateExtraCheckboxes);
 for (const el of [sampleEl, minAgeEl, maxAgeEl])
   el.addEventListener('change', () => { if (populationData) buildQuotas(); });
 for (const r of document.querySelectorAll('input[name="agegrp"],input[name="sexf"]'))
