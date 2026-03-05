@@ -31,7 +31,6 @@ select:focus, input:focus { outline: none; border-color: var(--accent); box-shad
 .radio-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .radio-group label { font-size: 0.85rem; font-weight: 400; text-transform: none; letter-spacing: 0; cursor: pointer; padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 4px; transition: all 0.15s; }
 .radio-group input { display: none; }
-.radio-group input:checked + span { background: var(--accent); color: #fff; }
 .radio-group label:has(input:checked) { border-color: var(--accent); background: var(--accent); color: #fff; }
 .btn { padding: 0.5rem 1.2rem; border: none; border-radius: 4px; font-size: 0.9rem; cursor: pointer; font-weight: 500; transition: all 0.15s; }
 .btn-primary { background: var(--eu-blue); color: #fff; }
@@ -48,6 +47,7 @@ select:focus, input:focus { outline: none; border-color: var(--accent); box-shad
 .table-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden; }
 .table-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
 .table-header h2 { font-size: 1.05rem; font-weight: 600; }
+.table-header .note { font-size: 0.8rem; color: var(--text-muted); font-weight: 400; }
 .table-actions { display: flex; gap: 0.5rem; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -80,9 +80,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
   <div class="controls">
     <div class="control-group">
       <label>Country</label>
-      <select id="country">
-        <option value="">Loading...</option>
-      </select>
+      <select id="country"><option value="">Loading...</option></select>
     </div>
     <div class="control-group">
       <label>Year</label>
@@ -90,7 +88,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
     </div>
     <div class="control-group">
       <label>NUTS Level</label>
-      <div class="radio-group" id="nutsLevel">
+      <div class="radio-group">
         <label><input type="radio" name="nuts" value="1"><span>NUTS1</span></label>
         <label><input type="radio" name="nuts" value="2" checked><span>NUTS2</span></label>
         <label><input type="radio" name="nuts" value="3"><span>NUTS3</span></label>
@@ -110,7 +108,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
     </div>
     <div class="control-group">
       <label>Sex</label>
-      <div class="radio-group" id="sexFilter">
+      <div class="radio-group">
         <label><input type="radio" name="sexf" value="MF" checked><span>Both</span></label>
         <label><input type="radio" name="sexf" value="M"><span>Male</span></label>
         <label><input type="radio" name="sexf" value="F"><span>Female</span></label>
@@ -118,7 +116,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
     </div>
     <div class="control-group">
       <label>Age Grouping</label>
-      <div class="radio-group" id="ageGrouping">
+      <div class="radio-group">
         <label><input type="radio" name="agegrp" value="5" checked><span>5-year</span></label>
         <label><input type="radio" name="agegrp" value="10"><span>10-year</span></label>
       </div>
@@ -165,7 +163,84 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
       <div class="table-wrap"><table id="regionTable"></table></div>
     </div>
 
-    <div class="table-section" id="crossSection">
+    <div class="table-section" id="educSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Education Level <span class="note">(country-level, ISCED 2011)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('educTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('educTable','education_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="educTable"></table></div>
+    </div>
+
+    <div class="table-section" id="employSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Employment Status <span class="note">(country-level)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('employTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('employTable','employment_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="employTable"></table></div>
+    </div>
+
+    <div class="table-section" id="urbanSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Degree of Urbanisation <span class="note">(country-level)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('urbanTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('urbanTable','urbanisation_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="urbanTable"></table></div>
+    </div>
+
+    <div class="table-section" id="occupSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Occupation (ISCO-08) <span class="note">(country-level, employed persons only)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('occupTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('occupTable','occupation_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="occupTable"></table></div>
+    </div>
+
+    <div class="table-section" id="citizenSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Citizenship <span class="note">(country-level)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('citizenTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('citizenTable','citizenship_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="citizenTable"></table></div>
+    </div>
+
+    <div class="table-section" id="cobSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Country of Birth <span class="note">(country-level)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('cobTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('cobTable','country_of_birth_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="cobTable"></table></div>
+    </div>
+
+    <div class="table-section" id="hhSection" style="display:none">
+      <div class="table-header">
+        <div><h2>Household Composition <span class="note">(country-level, households not persons)</span></h2></div>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('hhTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('hhTable','household_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="hhTable"></table></div>
+    </div>
+
+    <div class="table-section" id="crossSection" style="display:none">
       <div class="table-header">
         <h2>Cross-tab: Sex x Age (Interlocked Quotas)</h2>
         <div class="table-actions">
@@ -179,7 +254,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 </div>
 
 <script>
-const API_BASE = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_r_pjangrp3';
+const API_BASE = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/';
 
 const COUNTRIES = {
   AT:'Austria',BE:'Belgium',BG:'Bulgaria',HR:'Croatia',CY:'Cyprus',CZ:'Czechia',
@@ -189,34 +264,44 @@ const COUNTRIES = {
   SI:'Slovenia',ES:'Spain',SE:'Sweden',IS:'Iceland',LI:'Liechtenstein',NO:'Norway',CH:'Switzerland'
 };
 
-// 5-year age bands from Eurostat
 const AGE_BANDS_5 = [
   'Y_LT5','Y5-9','Y10-14','Y15-19','Y20-24','Y25-29','Y30-34','Y35-39',
   'Y40-44','Y45-49','Y50-54','Y55-59','Y60-64','Y65-69','Y70-74','Y75-79',
   'Y80-84','Y85-89','Y_GE90'
 ];
 
-// Map band code to [low, high] ages
+const LFS_AGE_BANDS = ['Y15-24','Y25-49','Y50-64','Y_GE65'];
+
+const EDUC_LEVELS = { 'ED0-2':'Low (ISCED 0-2)', 'ED3_4':'Medium (ISCED 3-4)', 'ED5-8':'High (ISCED 5-8)' };
+const EMPLOY_STATUSES = { 'EMP':'Employed', 'UNE':'Unemployed', 'INAC':'Inactive' };
+const URBAN_DEGREES = { 'DEG1':'Cities', 'DEG2':'Towns and suburbs', 'DEG3':'Rural areas' };
+const ISCO_CODES = {
+  'OC1':'Managers','OC2':'Professionals','OC3':'Technicians and associate professionals',
+  'OC4':'Clerical support workers','OC5':'Service and sales workers',
+  'OC6':'Skilled agricultural, forestry and fishery workers',
+  'OC7':'Craft and related trades workers','OC8':'Plant and machine operators and assemblers',
+  'OC9':'Elementary occupations','OC0':'Armed forces occupations'
+};
+const CITIZEN_CODES = { 'NAT':'National', 'EU27_2020_FOR':'Other EU citizen', 'NEU27_2020_FOR':'Non-EU citizen' };
+const COB_CODES = { 'NAT':'Born in country', 'EU27_2020_FOR':'Born in other EU country', 'NEU27_2020_FOR':'Born outside EU' };
+const HH_CODES = { 'A1':'Single person', 'CPL_NCH':'Couple, no children', 'CPL_CH':'Couple with children', 'A1_CH':'Single parent' };
+
 function bandRange(code) {
   if (code === 'Y_LT5') return [0, 4];
   if (code === 'Y_GE90') return [90, 120];
+  if (code === 'Y_GE65') return [65, 120];
+  if (code === 'Y_GE75') return [75, 120];
   const m = code.match(/Y(\d+)-(\d+)/);
   return m ? [+m[1], +m[2]] : null;
 }
 
-function bandLabel(code) {
-  if (code === 'Y_LT5') return '0-4';
-  if (code === 'Y_GE90') return '90+';
-  const r = bandRange(code);
-  return r ? `${r[0]}-${r[1]}` : code;
-}
-
-// State
-let geoLabels = {};    // geo code -> label
+// --- State ---
+let geoLabels = {};
 let availableYears = [];
-let populationData = null; // Map<string, number> keyed by "sex|age|geo"
+let populationData = null;   // Map "sex|age|geo" -> count
+let lfsData = {};            // { educ, employUrban, occup, citizen, cob, hh } each a Map or null
 
-// DOM refs
+// --- DOM ---
 const countryEl = document.getElementById('country');
 const yearEl = document.getElementById('year');
 const sampleEl = document.getElementById('sampleSize');
@@ -226,30 +311,27 @@ const buildBtn = document.getElementById('buildBtn');
 const statusEl = document.getElementById('status');
 const resultsEl = document.getElementById('results');
 
-// Init age dropdowns (1-year increments)
 function initAgeDropdowns() {
-  const ages = [];
-  for (let a = 0; a <= 100; a++) ages.push(a);
-  minAgeEl.innerHTML = ages.map(a => `<option value="${a}" ${a===18?'selected':''}>${a}</option>`).join('');
-  maxAgeEl.innerHTML = ages.map(a => `<option value="${a}" ${a===65?'selected':''}>${a}</option>`).join('');
+  const opts = [];
+  for (let a = 0; a <= 100; a++) opts.push(a);
+  minAgeEl.innerHTML = opts.map(a => `<option value="${a}" ${a===18?'selected':''}>${a}</option>`).join('');
+  maxAgeEl.innerHTML = opts.map(a => `<option value="${a}" ${a===65?'selected':''}>${a}</option>`).join('');
 }
 
-// Init country dropdown
 function initCountryDropdown() {
   const sorted = Object.entries(COUNTRIES).sort((a,b) => a[1].localeCompare(b[1]));
   countryEl.innerHTML = '<option value="">-- Select country --</option>' +
     sorted.map(([c,n]) => `<option value="${c}">${n}</option>`).join('');
 }
 
-// Status helpers
 function showStatus(type, msg) {
   statusEl.className = `status ${type}`;
   statusEl.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + msg;
 }
 function hideStatus() { statusEl.className = 'status'; statusEl.innerHTML = ''; }
 
-// Build URL with repeated params (Eurostat requires &geo=X&geo=Y, not geo=X,Y)
-function buildApiUrl(params) {
+// --- API ---
+function buildApiUrl(dataset, params) {
   const parts = ['format=JSON', 'lang=en'];
   for (const [key, val] of Object.entries(params)) {
     if (Array.isArray(val)) {
@@ -258,440 +340,488 @@ function buildApiUrl(params) {
       parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
     }
   }
-  return API_BASE + '?' + parts.join('&');
+  return API_BASE + dataset + '?' + parts.join('&');
 }
 
-async function apiFetch(params) {
-  const url = buildApiUrl(params);
+async function apiFetch(dataset, params) {
+  const url = buildApiUrl(dataset, params);
   const resp = await fetch(url);
-  if (!resp.ok) throw new Error(`API error ${resp.status}: ${resp.statusText}`);
+  if (!resp.ok) throw new Error(`API ${resp.status}`);
   return resp.json();
 }
 
-// Parse JSON-stat response into a map
+// --- JSON-stat parser ---
 function parseJsonStat(data) {
-  const dims = data.id;       // e.g. ['freq','unit','sex','age','geo','time']
-  const sizes = data.size;
-  const values = data.value;   // sparse object: flat_index -> value
-
-  // Build stride array
+  const dims = data.id, sizes = data.size, values = data.value;
   const strides = new Array(dims.length);
   strides[dims.length - 1] = 1;
-  for (let i = dims.length - 2; i >= 0; i--) {
-    strides[i] = strides[i + 1] * sizes[i + 1];
-  }
-
-  // Build dimension index maps: dim name -> { code -> position }
-  const dimIndex = {};
-  const dimLabels = {};
+  for (let i = dims.length - 2; i >= 0; i--) strides[i] = strides[i + 1] * sizes[i + 1];
+  const dimIndex = {}, dimLabels = {};
   for (const d of dims) {
     const cat = data.dimension[d].category;
     dimIndex[d] = cat.index;
     dimLabels[d] = cat.label || {};
   }
-
   return { dims, sizes, strides, values, dimIndex, dimLabels };
 }
 
 function lookupValue(parsed, coords) {
-  let flatIdx = 0;
+  let idx = 0;
   for (let i = 0; i < parsed.dims.length; i++) {
-    const dim = parsed.dims[i];
-    const pos = parsed.dimIndex[dim][coords[dim]];
+    const pos = parsed.dimIndex[parsed.dims[i]][coords[parsed.dims[i]]];
     if (pos === undefined) return null;
-    flatIdx += pos * parsed.strides[i];
+    idx += pos * parsed.strides[i];
   }
-  const v = parsed.values[flatIdx];
+  const v = parsed.values[idx];
   return v !== undefined ? v : null;
 }
 
-// Discover available years
+// --- Data fetchers ---
 async function fetchYears() {
   showStatus('loading', 'Discovering available years...');
   try {
-    const data = await apiFetch({ sex: 'T', age: 'TOTAL', geo: 'EU27_2020', unit: 'NR' });
+    const data = await apiFetch('demo_r_pjangrp3', { sex: 'T', age: 'TOTAL', geo: 'EU27_2020', unit: 'NR' });
     const parsed = parseJsonStat(data);
-    const timeIdx = parsed.dimIndex['time'] || {};
-    availableYears = Object.keys(timeIdx).sort().reverse();
+    availableYears = Object.keys(parsed.dimIndex['time'] || {}).sort().reverse();
     yearEl.innerHTML = availableYears.map(y => `<option value="${y}">${y}</option>`).join('');
     hideStatus();
     buildBtn.disabled = false;
   } catch (e) {
-    showStatus('error', 'Failed to fetch year data: ' + e.message);
+    showStatus('error', 'Failed to load: ' + e.message);
   }
 }
 
-// Geo catalog cache: { year -> { geoCode -> label } }
 let geoCatalog = {};
-
 async function fetchGeoCatalog(year) {
   if (geoCatalog[year]) return geoCatalog[year];
-  showStatus('loading', 'Fetching region catalog (one-time)...');
-  const data = await apiFetch({ sex: 'T', age: 'TOTAL', unit: 'NR', time: year });
-  const parsed = parseJsonStat(data);
-  const labels = parsed.dimLabels['geo'] || {};
-  geoCatalog[year] = labels;
-  return labels;
+  showStatus('loading', 'Fetching region catalog...');
+  const data = await apiFetch('demo_r_pjangrp3', { sex: 'T', age: 'TOTAL', unit: 'NR', time: year });
+  geoCatalog[year] = parseJsonStat(data).dimLabels['geo'] || {};
+  return geoCatalog[year];
 }
 
-// Fetch population for a country
-async function fetchPopulation(countryCode, year) {
+async function fetchPopulation(cc, year) {
   const nutsLevel = +document.querySelector('input[name="nuts"]:checked').value;
-  const geoLen = 2 + nutsLevel; // e.g. NUTS2 = 4 chars
-
-  // Get full geo catalog to discover region codes
+  const geoLen = 2 + nutsLevel;
   const catalog = await fetchGeoCatalog(year);
-  const allGeos = Object.keys(catalog);
-
-  // Filter to requested NUTS level, exclude deprecated codes (contain parenthetical like "NUTS 2016")
-  let targetGeos = allGeos.filter(g =>
-    g.startsWith(countryCode) && g.length === geoLen &&
-    !/\(NUTS\s/.test(catalog[g])
+  let targetGeos = Object.keys(catalog).filter(g =>
+    g.startsWith(cc) && g.length === geoLen && !/\(NUTS\s/.test(catalog[g])
   );
-
-  // For small countries that might not have sub-regions at this NUTS level
   if (targetGeos.length === 0) {
-    targetGeos = allGeos.filter(g => g === countryCode);
-    if (targetGeos.length === 0) {
-      throw new Error(`No regions found for ${COUNTRIES[countryCode]} at NUTS${nutsLevel}`);
-    }
+    targetGeos = Object.keys(catalog).filter(g => g === cc);
+    if (targetGeos.length === 0) throw new Error(`No regions found at NUTS${nutsLevel}`);
   }
-
-  // Collect geo labels
   geoLabels = {};
-  for (const g of targetGeos) {
-    geoLabels[g] = catalog[g] || g;
-  }
+  for (const g of targetGeos) geoLabels[g] = catalog[g] || g;
 
-  // Batch fetch - max 30 geos per request to stay under URL limits
   const BATCH = 30;
   const results = new Map();
-  const sexCodes = ['M', 'F'];
-  const ageCodes = AGE_BANDS_5;
-
   for (let i = 0; i < targetGeos.length; i += BATCH) {
     const batch = targetGeos.slice(i, i + BATCH);
-    const pctDone = Math.round((i / targetGeos.length) * 100);
-    showStatus('loading', `Fetching population data... ${pctDone}% (${i}/${targetGeos.length} regions)`);
-
-    const data = await apiFetch({
-      sex: sexCodes,
-      age: ageCodes,
-      geo: batch,
-      unit: 'NR',
-      time: year
+    showStatus('loading', `Population data... ${Math.round(i/targetGeos.length*100)}% (${i}/${targetGeos.length} regions)`);
+    const data = await apiFetch('demo_r_pjangrp3', {
+      sex: ['M','F'], age: AGE_BANDS_5, geo: batch, unit: 'NR', time: year
     });
     const parsed = parseJsonStat(data);
+    for (const geo of batch)
+      for (const sex of ['M','F'])
+        for (const age of AGE_BANDS_5) {
+          const val = lookupValue(parsed, { freq:'A', unit:'NR', sex, age, geo, time: year });
+          if (val > 0) results.set(`${sex}|${age}|${geo}`, val);
+        }
+  }
+  populationData = results;
+}
 
-    // Extract values
-    for (const geo of batch) {
-      for (const sex of sexCodes) {
-        for (const age of ageCodes) {
-          const coords = { freq: 'A', unit: 'NR', sex, age, geo, time: year };
-          const val = lookupValue(parsed, coords);
-          if (val !== null && val > 0) {
-            results.set(`${sex}|${age}|${geo}`, val);
-          }
+// Generic LFS fetcher: returns Map of "key1|key2|...|age" -> population
+async function fetchLfs(dataset, params, keyDims) {
+  try {
+    const data = await apiFetch(dataset, params);
+    const parsed = parseJsonStat(data);
+    const map = new Map();
+    // Build all coordinate combos from the key dimensions
+    function recurse(dimIdx, coords, keyParts) {
+      if (dimIdx === parsed.dims.length) {
+        const val = lookupValue(parsed, coords);
+        if (val !== null && val > 0) map.set(keyParts.join('|'), val);
+        return;
+      }
+      const dim = parsed.dims[dimIdx];
+      const codes = Object.keys(parsed.dimIndex[dim]);
+      for (const code of codes) {
+        coords[dim] = code;
+        if (keyDims.includes(dim)) {
+          recurse(dimIdx + 1, coords, [...keyParts, code]);
+        } else {
+          recurse(dimIdx + 1, coords, keyParts);
         }
       }
     }
+    recurse(0, {}, []);
+    return map;
+  } catch (e) {
+    console.warn(`${dataset} unavailable:`, e.message);
+    return null;
   }
-
-  populationData = results;
-  return results;
 }
 
-// Filter age bands based on min/max age selection
+async function fetchAllLfs(cc, year) {
+  showStatus('loading', 'Fetching education, employment, urbanisation, occupation, citizenship, country of birth, household data...');
+
+  const sexArr = ['M','F'];
+  const [educ, employUrban, occup, citizen, cob, hh] = await Promise.all([
+    // Education
+    fetchLfs('lfsa_pgaed', {
+      sex: sexArr, isced11: Object.keys(EDUC_LEVELS), age: LFS_AGE_BANDS,
+      geo: cc, unit: 'THS_PER', time: year
+    }, ['sex','isced11','age']),
+    // Employment + Urbanisation
+    fetchLfs('lfsa_pgauws', {
+      sex: sexArr, wstatus: Object.keys(EMPLOY_STATUSES),
+      deg_urb: Object.keys(URBAN_DEGREES), age: LFS_AGE_BANDS,
+      geo: cc, unit: 'THS_PER', time: year
+    }, ['sex','wstatus','deg_urb','age']),
+    // Occupation
+    fetchLfs('lfsa_egais', {
+      sex: sexArr, wstatus: 'EMP', isco08: Object.keys(ISCO_CODES),
+      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+    }, ['sex','isco08','age']),
+    // Citizenship
+    fetchLfs('lfsa_pganws', {
+      sex: sexArr, citizen: Object.keys(CITIZEN_CODES), wstatus: 'POP',
+      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+    }, ['sex','citizen','age']),
+    // Country of birth
+    fetchLfs('lfsa_pgacws', {
+      sex: sexArr, c_birth: Object.keys(COB_CODES), wstatus: 'POP',
+      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+    }, ['sex','c_birth','age']),
+    // Household composition
+    fetchLfs('lfst_hhnhtych', {
+      agechild: 'TOTAL', n_child: 'TOTAL',
+      phhcomp: Object.keys(HH_CODES), geo: cc, unit: 'THS_HH', time: year
+    }, ['phhcomp'])
+  ]);
+
+  lfsData = { educ, employUrban, occup, citizen, cob, hh };
+}
+
+// --- Age filtering ---
 function getFilteredAgeBands(minAge, maxAge) {
   const filtered = [];
   for (const band of AGE_BANDS_5) {
     const r = bandRange(band);
-    if (!r) continue;
-    if (r[1] < minAge || r[0] > maxAge) continue;
-    // Calculate overlap fraction for partial bands
-    const overlapLow = Math.max(r[0], minAge);
-    const overlapHigh = Math.min(r[1], maxAge);
-    const bandWidth = r[1] - r[0] + 1;
-    const overlapWidth = overlapHigh - overlapLow + 1;
-    const fraction = overlapWidth / bandWidth;
-    // Label reflects actual included range
-    const label = band === 'Y_GE90'
-      ? `${overlapLow}+`
-      : `${overlapLow}-${overlapHigh}`;
+    if (!r || r[1] < minAge || r[0] > maxAge) continue;
+    const oLow = Math.max(r[0], minAge), oHigh = Math.min(r[1], maxAge);
+    const fraction = (oHigh - oLow + 1) / (r[1] - r[0] + 1);
+    const label = band === 'Y_GE90' ? `${oLow}+` : `${oLow}-${oHigh}`;
     filtered.push({ code: band, fraction, label });
   }
   return filtered;
 }
 
-// Merge 5-year bands into 10-year if requested
-function mergeAgeBands(bands, grouping) {
-  if (grouping === 5) return bands.map(b => ({ codes: [b.code], fractions: [b.fraction], label: b.label }));
+function lfsAgeFraction(lfsBand, minAge, maxAge) {
+  const r = bandRange(lfsBand);
+  if (!r) return 0;
+  const hi = Math.min(r[1], 120);
+  if (hi < minAge || r[0] > maxAge) return 0;
+  return (Math.min(hi, maxAge) - Math.max(r[0], minAge) + 1) / (hi - r[0] + 1);
+}
 
-  // 10-year grouping: pair consecutive bands
+function mergeAgeBands(bands, grouping) {
+  if (grouping === 5) return bands.map(b => ({ codes:[b.code], fractions:[b.fraction], label:b.label }));
   const merged = [];
   let i = 0;
   while (i < bands.length) {
     const r1 = bandRange(bands[i].code);
     if (i + 1 < bands.length) {
-      const r2 = bandRange(bands[i + 1].code);
-      // Check if they form a natural 10-year group (e.g. 20-24 + 25-29 = 20-29)
+      const r2 = bandRange(bands[i+1].code);
       if (r1 && r2 && r1[0] % 10 === 0 && r2[0] === r1[0] + 5) {
-        // Use the actual low from first band's label and high from second band's label
-        const lowLabel = bands[i].label.split('-')[0];
-        const highPart = bands[i + 1].label;
-        const highLabel = highPart.includes('+') ? highPart : highPart.split('-')[1];
+        const lo = bands[i].label.split('-')[0];
+        const hp = bands[i+1].label;
+        const hi = hp.includes('+') ? hp : hp.split('-')[1];
         merged.push({
-          codes: [bands[i].code, bands[i + 1].code],
-          fractions: [bands[i].fraction, bands[i + 1].fraction],
-          label: highPart.includes('+') ? `${lowLabel}+` : `${lowLabel}-${highLabel}`
+          codes: [bands[i].code, bands[i+1].code],
+          fractions: [bands[i].fraction, bands[i+1].fraction],
+          label: hp.includes('+') ? `${lo}+` : `${lo}-${hi}`
         });
-        i += 2;
-        continue;
+        i += 2; continue;
       }
     }
-    merged.push({ codes: [bands[i].code], fractions: [bands[i].fraction], label: bands[i].label });
+    merged.push({ codes:[bands[i].code], fractions:[bands[i].fraction], label:bands[i].label });
     i++;
   }
   return merged;
 }
 
-// Aggregate population from the data map
+// --- Aggregation ---
 function aggregatePop(sexFilter, ageBands, geoFilter) {
   let total = 0;
-  const sexes = sexFilter ? [sexFilter] : ['M', 'F'];
+  const sexes = sexFilter ? [sexFilter] : ['M','F'];
   const geos = geoFilter ? [geoFilter] : Object.keys(geoLabels);
+  for (const sex of sexes)
+    for (const ab of ageBands)
+      for (let k = 0; k < ab.codes.length; k++)
+        for (const geo of geos)
+          total += (populationData.get(`${sex}|${ab.codes[k]}|${geo}`) || 0) * ab.fractions[k];
+  return Math.round(total);
+}
 
-  for (const sex of sexes) {
-    for (const ab of ageBands) {
-      for (let k = 0; k < ab.codes.length; k++) {
-        const code = ab.codes[k];
-        const frac = ab.fractions[k];
-        for (const geo of geos) {
-          const val = populationData.get(`${sex}|${code}|${geo}`) || 0;
-          total += val * frac;
-        }
-      }
+// Aggregate LFS map values. keyPattern is a function(sex, age) -> key prefix to match.
+// The map keys are "dim1|dim2|...|age" where age is the last segment for sex-aware datasets.
+function aggregateLfsGeneric(map, sexes, minAge, maxAge, filterFn) {
+  if (!map) return 0;
+  let total = 0;
+  for (const [key, val] of map) {
+    if (!filterFn(key)) continue;
+    // Find which sex this belongs to (first segment for sex-aware datasets)
+    const parts = key.split('|');
+    const sex = parts[0];
+    if (sex === 'M' || sex === 'F') {
+      if (!sexes.includes(sex)) continue;
+    }
+    // Find age (last segment if it starts with Y)
+    const lastPart = parts[parts.length - 1];
+    if (LFS_AGE_BANDS.includes(lastPart)) {
+      const frac = lfsAgeFraction(lastPart, minAge, maxAge);
+      if (frac > 0) total += val * 1000 * frac; // THS_PER -> persons
+    } else {
+      total += val * 1000; // no age dimension (e.g. household)
     }
   }
   return Math.round(total);
 }
 
-// Largest remainder rounding
+// --- Rounding ---
 function largestRemainder(proportions, total) {
+  if (!proportions.length) return [];
   const raw = proportions.map(p => p * total);
   const floors = raw.map(Math.floor);
-  let remainder = total - floors.reduce((a, b) => a + b, 0);
-
-  const fractional = raw.map((v, i) => ({ i, frac: v - floors[i] }));
-  fractional.sort((a, b) => b.frac - a.frac);
-
-  for (let k = 0; k < remainder; k++) {
-    floors[fractional[k].i]++;
-  }
+  let rem = total - floors.reduce((a,b) => a+b, 0);
+  const fr = raw.map((v,i) => ({ i, f: v - floors[i] })).sort((a,b) => b.f - a.f);
+  for (let k = 0; k < rem; k++) floors[fr[k].i]++;
   return floors;
 }
 
-// Build quotas
+// --- Build all tables ---
 function buildQuotas() {
   const sampleSize = +sampleEl.value;
   const minAge = +minAgeEl.value;
   const maxAge = +maxAgeEl.value;
   const grouping = +document.querySelector('input[name="agegrp"]:checked').value;
   const sexFilterVal = document.querySelector('input[name="sexf"]:checked').value;
-  const sexes = sexFilterVal === 'MF' ? ['M', 'F'] : [sexFilterVal];
+  const sexes = sexFilterVal === 'MF' ? ['M','F'] : [sexFilterVal];
 
-  if (minAge >= maxAge) {
-    showStatus('error', 'Min age must be less than max age.');
-    return;
-  }
+  if (minAge >= maxAge) { showStatus('error', 'Min age must be less than max age.'); return; }
 
   const filteredBands = getFilteredAgeBands(minAge, maxAge);
   const ageBands = mergeAgeBands(filteredBands, grouping);
   const geos = Object.keys(geoLabels);
+  const totalPop = sexes.reduce((s,x) => s + aggregatePop(x, ageBands, null), 0);
+  if (totalPop === 0) { showStatus('error', 'No population data found.'); return; }
 
-  // Total filtered population (respecting sex filter)
-  const totalPop = sexes.reduce((sum, s) => sum + aggregatePop(s, ageBands, null), 0);
-  if (totalPop === 0) {
-    showStatus('error', 'No population data found for the selected parameters.');
-    return;
-  }
-
-  // --- Sex distribution (only shown when both sexes selected) ---
+  // Sex
   const sexSection = document.getElementById('sexSection');
   if (sexes.length === 2) {
     sexSection.style.display = '';
-    const sexPops = sexes.map(s => aggregatePop(s, ageBands, null));
-    const sexProps = sexPops.map(p => p / totalPop);
-    const sexQuotas = largestRemainder(sexProps, sampleSize);
-
+    const sp = sexes.map(s => aggregatePop(s, ageBands, null));
+    const sq = largestRemainder(sp.map(p => p/totalPop), sampleSize);
     renderTable('sexTable', {
-      headers: ['Sex', 'Population', '%', 'Quota'],
-      rows: [
-        ['Male', fmt(sexPops[0]), pct(sexProps[0]), sexQuotas[0]],
-        ['Female', fmt(sexPops[1]), pct(sexProps[1]), sexQuotas[1]]
-      ],
-      footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
-      numCols: [1, 2, 3]
+      headers: ['Sex','Population','%','Quota'],
+      rows: [['Male',fmt(sp[0]),pct(sp[0]/totalPop),sq[0]],['Female',fmt(sp[1]),pct(sp[1]/totalPop),sq[1]]],
+      footer: ['Total',fmt(totalPop),'100.0%',sampleSize], numCols:[1,2,3]
     });
-  } else {
-    sexSection.style.display = 'none';
+  } else sexSection.style.display = 'none';
+
+  // Age
+  const ap = ageBands.map(ab => sexes.reduce((s,x) => s + aggregatePop(x,[ab],null), 0));
+  const aq = largestRemainder(ap.map(p => p/totalPop), sampleSize);
+  renderTable('ageTable', {
+    headers: ['Age Group','Population','%','Quota'],
+    rows: ageBands.map((ab,i) => [ab.label,fmt(ap[i]),pct(ap[i]/totalPop),aq[i]]),
+    footer: ['Total',fmt(totalPop),'100.0%',sampleSize], numCols:[1,2,3]
+  });
+
+  // Region
+  const rp = geos.map(g => sexes.reduce((s,x) => s + aggregatePop(x,ageBands,g), 0));
+  const rq = largestRemainder(rp.map(p => p/totalPop), sampleSize);
+  renderTable('regionTable', {
+    headers: ['Region','Code','Population','%','Quota'],
+    rows: geos.map((g,i) => [geoLabels[g],g,fmt(rp[i]),pct(rp[i]/totalPop),rq[i]]),
+    footer: ['Total','',fmt(totalPop),'100.0%',sampleSize], numCols:[2,3,4]
+  });
+
+  // Helper for LFS-based tables
+  function buildLfsTable(sectionId, tableId, codes, labels, mapData, dimName) {
+    const section = document.getElementById(sectionId);
+    if (!mapData || mapData.size === 0) { section.style.display = 'none'; return; }
+
+    const codeKeys = Object.keys(codes);
+    const pops = codeKeys.map(code =>
+      aggregateLfsGeneric(mapData, sexes, minAge, maxAge, key => {
+        const parts = key.split('|');
+        return parts.includes(code);
+      })
+    );
+    const total = pops.reduce((a,b) => a+b, 0);
+    if (total === 0) { section.style.display = 'none'; return; }
+
+    section.style.display = '';
+    const props = pops.map(p => p/total);
+    const quotas = largestRemainder(props, sampleSize);
+    renderTable(tableId, {
+      headers: [labels, 'Population (est.)','%','Quota'],
+      rows: codeKeys.map((c,i) => [codes[c],fmt(pops[i]),pct(props[i]),quotas[i]]),
+      footer: ['Total',fmt(total),'100.0%',sampleSize], numCols:[1,2,3]
+    });
   }
 
-  // --- Age distribution ---
-  const agePops = ageBands.map(ab => sexes.reduce((sum, s) => sum + aggregatePop(s, [ab], null), 0));
-  const ageProps = agePops.map(p => p / totalPop);
-  const ageQuotas = largestRemainder(ageProps, sampleSize);
+  buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ, 'isced11');
+  buildLfsTable('occupSection','occupTable', ISCO_CODES, 'Occupation', lfsData.occup, 'isco08');
+  buildLfsTable('citizenSection','citizenTable', CITIZEN_CODES, 'Citizenship', lfsData.citizen, 'citizen');
+  buildLfsTable('cobSection','cobTable', COB_CODES, 'Country of Birth', lfsData.cob, 'c_birth');
 
-  renderTable('ageTable', {
-    headers: ['Age Group', 'Population', '%', 'Quota'],
-    rows: ageBands.map((ab, i) => [ab.label, fmt(agePops[i]), pct(ageProps[i]), ageQuotas[i]]),
-    footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
-    numCols: [1, 2, 3]
-  });
+  // Employment (from combined employUrban map, sum across all urbanisation)
+  const employSection = document.getElementById('employSection');
+  if (lfsData.employUrban && lfsData.employUrban.size > 0) {
+    const empCodes = Object.keys(EMPLOY_STATUSES);
+    const empPops = empCodes.map(code =>
+      aggregateLfsGeneric(lfsData.employUrban, sexes, minAge, maxAge, key => key.split('|').includes(code))
+    );
+    const empTotal = empPops.reduce((a,b) => a+b, 0);
+    if (empTotal > 0) {
+      employSection.style.display = '';
+      const empQ = largestRemainder(empPops.map(p => p/empTotal), sampleSize);
+      renderTable('employTable', {
+        headers: ['Employment Status','Population (est.)','%','Quota'],
+        rows: empCodes.map((c,i) => [EMPLOY_STATUSES[c],fmt(empPops[i]),pct(empPops[i]/empTotal),empQ[i]]),
+        footer: ['Total',fmt(empTotal),'100.0%',sampleSize], numCols:[1,2,3]
+      });
+    } else employSection.style.display = 'none';
+  } else employSection.style.display = 'none';
 
-  // --- Regional distribution ---
-  const regPops = geos.map(g => sexes.reduce((sum, s) => sum + aggregatePop(s, ageBands, g), 0));
-  const regProps = regPops.map(p => p / totalPop);
-  const regQuotas = largestRemainder(regProps, sampleSize);
+  // Urbanisation (from combined employUrban map, sum across all employment statuses)
+  const urbanSection = document.getElementById('urbanSection');
+  if (lfsData.employUrban && lfsData.employUrban.size > 0) {
+    const urbCodes = Object.keys(URBAN_DEGREES);
+    const urbPops = urbCodes.map(code =>
+      aggregateLfsGeneric(lfsData.employUrban, sexes, minAge, maxAge, key => key.split('|').includes(code))
+    );
+    const urbTotal = urbPops.reduce((a,b) => a+b, 0);
+    if (urbTotal > 0) {
+      urbanSection.style.display = '';
+      const urbQ = largestRemainder(urbPops.map(p => p/urbTotal), sampleSize);
+      renderTable('urbanTable', {
+        headers: ['Urbanisation','Population (est.)','%','Quota'],
+        rows: urbCodes.map((c,i) => [URBAN_DEGREES[c],fmt(urbPops[i]),pct(urbPops[i]/urbTotal),urbQ[i]]),
+        footer: ['Total',fmt(urbTotal),'100.0%',sampleSize], numCols:[1,2,3]
+      });
+    } else urbanSection.style.display = 'none';
+  } else urbanSection.style.display = 'none';
 
-  renderTable('regionTable', {
-    headers: ['Region', 'Code', 'Population', '%', 'Quota'],
-    rows: geos.map((g, i) => [geoLabels[g], g, fmt(regPops[i]), pct(regProps[i]), regQuotas[i]]),
-    footer: ['Total', '', fmt(totalPop), '100.0%', sampleSize],
-    numCols: [2, 3, 4]
-  });
+  // Household composition (no sex/age filtering)
+  const hhSection = document.getElementById('hhSection');
+  if (lfsData.hh && lfsData.hh.size > 0) {
+    const hhCodes = Object.keys(HH_CODES);
+    const hhPops = hhCodes.map(code => {
+      const val = lfsData.hh.get(code);
+      return val ? Math.round(val * 1000) : 0;
+    });
+    const hhTotal = hhPops.reduce((a,b) => a+b, 0);
+    if (hhTotal > 0) {
+      hhSection.style.display = '';
+      const hhQ = largestRemainder(hhPops.map(p => p/hhTotal), sampleSize);
+      renderTable('hhTable', {
+        headers: ['Household Type','Households (est.)','%','Quota'],
+        rows: hhCodes.map((c,i) => [HH_CODES[c],fmt(hhPops[i]),pct(hhPops[i]/hhTotal),hhQ[i]]),
+        footer: ['Total',fmt(hhTotal),'100.0%',sampleSize], numCols:[1,2,3]
+      });
+    } else hhSection.style.display = 'none';
+  } else hhSection.style.display = 'none';
 
-  // --- Cross-tab: Sex x Age (only shown when both sexes selected) ---
+  // Cross-tab
   const crossSection = document.getElementById('crossSection');
   if (sexes.length === 2) {
     crossSection.style.display = '';
-    const crossPops = [];
-    const crossProps = [];
-    for (const sex of sexes) {
-      for (const ab of ageBands) {
-        const pop = aggregatePop(sex, [ab], null);
-        crossPops.push(pop);
-        crossProps.push(pop / totalPop);
-      }
-    }
-    const crossQuotas = largestRemainder(crossProps, sampleSize);
-
-    const crossHeaders = ['', ...ageBands.map(ab => ab.label), 'Total'];
-    const crossRows = [];
+    const cp = [];
+    for (const sex of sexes) for (const ab of ageBands) cp.push(aggregatePop(sex,[ab],null)/totalPop);
+    const cq = largestRemainder(cp, sampleSize);
+    const ch = ['', ...ageBands.map(ab => ab.label), 'Total'];
+    const cr = [];
     for (let s = 0; s < 2; s++) {
-      const sexLabel = s === 0 ? 'Male' : 'Female';
-      const row = [sexLabel];
-      let rowTotal = 0;
-      for (let a = 0; a < ageBands.length; a++) {
-        const q = crossQuotas[s * ageBands.length + a];
-        row.push(q);
-        rowTotal += q;
-      }
-      row.push(rowTotal);
-      crossRows.push(row);
+      const row = [s===0?'Male':'Female'];
+      let rt = 0;
+      for (let a = 0; a < ageBands.length; a++) { const q = cq[s*ageBands.length+a]; row.push(q); rt += q; }
+      row.push(rt); cr.push(row);
     }
-    const colTotals = ['Total'];
-    for (let a = 0; a < ageBands.length; a++) {
-      colTotals.push(crossQuotas[a] + crossQuotas[ageBands.length + a]);
-    }
-    colTotals.push(sampleSize);
-
-    renderTable('crossTable', {
-      headers: crossHeaders,
-      rows: crossRows,
-      footer: colTotals,
-      numCols: Array.from({ length: ageBands.length + 1 }, (_, i) => i + 1)
-    });
-  } else {
-    crossSection.style.display = 'none';
-  }
+    const ct = ['Total'];
+    for (let a = 0; a < ageBands.length; a++) ct.push(cq[a]+cq[ageBands.length+a]);
+    ct.push(sampleSize);
+    renderTable('crossTable', { headers:ch, rows:cr, footer:ct, numCols: Array.from({length:ageBands.length+1},(_,i)=>i+1) });
+  } else crossSection.style.display = 'none';
 
   resultsEl.classList.add('visible');
-  showStatus('success', `Quotas built for ${COUNTRIES[countryEl.value]} (${yearEl.value}): ${fmt(totalPop)} population, n=${fmt(sampleSize)} sample.`);
+  showStatus('success', `Quotas built for ${COUNTRIES[countryEl.value]} (${yearEl.value}): ${fmt(totalPop)} target population, n=${fmt(sampleSize)}.`);
 }
 
-// Render a table
+// --- Table rendering ---
 function renderTable(tableId, { headers, rows, footer, numCols }) {
   const nc = new Set(numCols || []);
-  let html = '<thead><tr>';
-  headers.forEach((h, i) => { html += `<th${nc.has(i) ? ' class="num"' : ''}>${h}</th>`; });
-  html += '</tr></thead><tbody>';
-  for (const row of rows) {
-    html += '<tr>';
-    row.forEach((cell, i) => { html += `<td${nc.has(i) ? ' class="num"' : ''}>${cell}</td>`; });
-    html += '</tr>';
-  }
-  html += '</tbody>';
-  if (footer) {
-    html += '<tfoot><tr>';
-    footer.forEach((cell, i) => { html += `<td${nc.has(i) ? ' class="num"' : ''}>${cell}</td>`; });
-    html += '</tr></tfoot>';
-  }
-  document.getElementById(tableId).innerHTML = html;
+  let h = '<thead><tr>';
+  headers.forEach((c,i) => { h += `<th${nc.has(i)?' class="num"':''}>${c}</th>`; });
+  h += '</tr></thead><tbody>';
+  for (const row of rows) { h += '<tr>'; row.forEach((c,i) => { h += `<td${nc.has(i)?' class="num"':''}>${c}</td>`; }); h += '</tr>'; }
+  h += '</tbody>';
+  if (footer) { h += '<tfoot><tr>'; footer.forEach((c,i) => { h += `<td${nc.has(i)?' class="num"':''}>${c}</td>`; }); h += '</tr></tfoot>'; }
+  document.getElementById(tableId).innerHTML = h;
 }
 
-// Formatting helpers
 function fmt(n) { return Number(n).toLocaleString('en'); }
 function pct(p) { return (p * 100).toFixed(1) + '%'; }
 
-// Table to TSV string
 function tableToTSV(tableId) {
-  const table = document.getElementById(tableId);
   const rows = [];
-  for (const tr of table.querySelectorAll('tr')) {
+  for (const tr of document.getElementById(tableId).querySelectorAll('tr')) {
     const cells = [];
-    for (const cell of tr.querySelectorAll('th, td')) {
-      cells.push(cell.textContent);
-    }
+    for (const c of tr.querySelectorAll('th,td')) cells.push(c.textContent);
     rows.push(cells.join('\t'));
   }
   return rows.join('\n');
 }
 
-// Copy table to clipboard
 function copyTable(tableId) {
-  const tsv = tableToTSV(tableId);
-  navigator.clipboard.writeText(tsv).then(() => {
-    const btn = event.target;
-    const orig = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = orig, 1500);
+  navigator.clipboard.writeText(tableToTSV(tableId)).then(() => {
+    const btn = event.target; const orig = btn.textContent;
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 1500);
   });
 }
 
-// Download CSV
 function downloadCSV(tableId, filename) {
-  const table = document.getElementById(tableId);
   const rows = [];
-  for (const tr of table.querySelectorAll('tr')) {
+  for (const tr of document.getElementById(tableId).querySelectorAll('tr')) {
     const cells = [];
-    for (const cell of tr.querySelectorAll('th, td')) {
-      let text = cell.textContent.replace(/"/g, '""');
-      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
-        text = `"${text}"`;
-      }
-      cells.push(text);
+    for (const c of tr.querySelectorAll('th,td')) {
+      let t = c.textContent.replace(/"/g,'""');
+      if (t.includes(',') || t.includes('"') || t.includes('\n')) t = `"${t}"`;
+      cells.push(t);
     }
     rows.push(cells.join(','));
   }
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  a.href = URL.createObjectURL(new Blob([rows.join('\n')], { type:'text/csv' }));
+  a.download = filename; a.click();
 }
 
-// Event listeners
+// --- Events ---
 buildBtn.addEventListener('click', async () => {
-  const country = countryEl.value;
-  if (!country) { showStatus('error', 'Please select a country.'); return; }
-
+  const cc = countryEl.value;
+  if (!cc) { showStatus('error', 'Please select a country.'); return; }
   buildBtn.disabled = true;
   resultsEl.classList.remove('visible');
-
   try {
-    await fetchPopulation(country, yearEl.value);
+    const year = yearEl.value;
+    await fetchPopulation(cc, year);
+    await fetchAllLfs(cc, year);
     buildQuotas();
   } catch (e) {
     showStatus('error', 'Error: ' + e.message);
@@ -700,15 +830,11 @@ buildBtn.addEventListener('click', async () => {
   }
 });
 
-// Recalculate on parameter changes (if data already loaded)
-for (const el of [sampleEl, minAgeEl, maxAgeEl]) {
+for (const el of [sampleEl, minAgeEl, maxAgeEl])
   el.addEventListener('change', () => { if (populationData) buildQuotas(); });
-}
-for (const radio of document.querySelectorAll('input[name="agegrp"], input[name="sexf"]')) {
-  radio.addEventListener('change', () => { if (populationData) buildQuotas(); });
-}
+for (const r of document.querySelectorAll('input[name="agegrp"],input[name="sexf"]'))
+  r.addEventListener('change', () => { if (populationData) buildQuotas(); });
 
-// Init
 initAgeDropdowns();
 initCountryDropdown();
 fetchYears();
