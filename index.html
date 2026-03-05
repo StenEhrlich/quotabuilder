@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eurostat Quota Builder</title>
+<style>
+:root {
+  --eu-blue: #003399;
+  --eu-gold: #FFD700;
+  --bg: #f5f7fa;
+  --card-bg: #fff;
+  --border: #dde1e7;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --row-alt: #f9fafb;
+  --accent: #003399;
+  --accent-light: #e8edfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+header { background: var(--eu-blue); color: #fff; padding: 1.2rem 2rem; display: flex; align-items: center; gap: 1rem; }
+header h1 { font-size: 1.4rem; font-weight: 600; }
+header .eu-stars { color: var(--eu-gold); font-size: 1.2rem; letter-spacing: 2px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+.controls { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; align-items: end; }
+.control-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.control-group label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+select, input[type="number"] { padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 4px; font-size: 0.95rem; background: #fff; }
+select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+.radio-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.radio-group label { font-size: 0.85rem; font-weight: 400; text-transform: none; letter-spacing: 0; cursor: pointer; padding: 0.3rem 0.7rem; border: 1px solid var(--border); border-radius: 4px; transition: all 0.15s; }
+.radio-group input { display: none; }
+.radio-group input:checked + span { background: var(--accent); color: #fff; }
+.radio-group label:has(input:checked) { border-color: var(--accent); background: var(--accent); color: #fff; }
+.btn { padding: 0.5rem 1.2rem; border: none; border-radius: 4px; font-size: 0.9rem; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.btn-primary { background: var(--eu-blue); color: #fff; }
+.btn-primary:hover { background: #002277; }
+.btn-secondary { background: #e5e7eb; color: var(--text); }
+.btn-secondary:hover { background: #d1d5db; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.status { padding: 0.8rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; display: none; }
+.status.loading { display: block; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.status.error { display: block; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.status.success { display: block; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.results { display: none; }
+.results.visible { display: block; }
+.table-section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden; }
+.table-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); }
+.table-header h2 { font-size: 1.05rem; font-weight: 600; }
+.table-actions { display: flex; gap: 0.5rem; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th { background: var(--accent-light); color: var(--accent); font-weight: 600; text-align: left; padding: 0.6rem 1rem; white-space: nowrap; position: sticky; top: 0; }
+td { padding: 0.5rem 1rem; border-top: 1px solid var(--border); }
+tr:nth-child(even) td { background: var(--row-alt); }
+tr:hover td { background: #eef2ff; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: var(--accent-light) !important; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #bfdbfe; border-top-color: #1e40af; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 0.5rem; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.cross-tab-wrap { max-height: 600px; overflow: auto; }
+.cross-tab-wrap th { position: sticky; top: 0; z-index: 2; }
+.cross-tab-wrap th:first-child { left: 0; z-index: 3; }
+.cross-tab-wrap td:first-child { position: sticky; left: 0; background: var(--card-bg); font-weight: 600; z-index: 1; }
+.cross-tab-wrap tr:nth-child(even) td:first-child { background: var(--row-alt); }
+@media (max-width: 768px) {
+  .controls { grid-template-columns: 1fr 1fr; }
+  header { padding: 1rem; }
+  .container { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <span class="eu-stars">* * *</span>
+  <h1>Eurostat Quota Builder</h1>
+</header>
+<div class="container">
+  <div class="controls">
+    <div class="control-group">
+      <label>Country</label>
+      <select id="country">
+        <option value="">Loading...</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Year</label>
+      <select id="year"></select>
+    </div>
+    <div class="control-group">
+      <label>NUTS Level</label>
+      <div class="radio-group" id="nutsLevel">
+        <label><input type="radio" name="nuts" value="1"><span>NUTS1</span></label>
+        <label><input type="radio" name="nuts" value="2" checked><span>NUTS2</span></label>
+        <label><input type="radio" name="nuts" value="3"><span>NUTS3</span></label>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>Sample Size</label>
+      <input type="number" id="sampleSize" value="1000" min="10" max="100000">
+    </div>
+    <div class="control-group">
+      <label>Min Age</label>
+      <select id="minAge"></select>
+    </div>
+    <div class="control-group">
+      <label>Max Age</label>
+      <select id="maxAge"></select>
+    </div>
+    <div class="control-group">
+      <label>Age Grouping</label>
+      <div class="radio-group" id="ageGrouping">
+        <label><input type="radio" name="agegrp" value="5" checked><span>5-year</span></label>
+        <label><input type="radio" name="agegrp" value="10"><span>10-year</span></label>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>&nbsp;</label>
+      <button class="btn btn-primary" id="buildBtn" disabled>Build Quotas</button>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div id="results" class="results">
+    <div class="table-section" id="sexSection">
+      <div class="table-header">
+        <h2>Sex Distribution</h2>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('sexTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('sexTable','sex_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="sexTable"></table></div>
+    </div>
+
+    <div class="table-section" id="ageSection">
+      <div class="table-header">
+        <h2>Age Group Distribution</h2>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('ageTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('ageTable','age_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="ageTable"></table></div>
+    </div>
+
+    <div class="table-section" id="regionSection">
+      <div class="table-header">
+        <h2>Regional Distribution</h2>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('regionTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('regionTable','region_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="regionTable"></table></div>
+    </div>
+
+    <div class="table-section" id="crossSection">
+      <div class="table-header">
+        <h2>Cross-tab: Sex x Age (Interlocked Quotas)</h2>
+        <div class="table-actions">
+          <button class="btn btn-secondary" onclick="copyTable('crossTable')">Copy</button>
+          <button class="btn btn-secondary" onclick="downloadCSV('crossTable','crosstab_quotas.csv')">CSV</button>
+        </div>
+      </div>
+      <div class="cross-tab-wrap"><table id="crossTable"></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_r_pjangrp3';
+
+const COUNTRIES = {
+  AT:'Austria',BE:'Belgium',BG:'Bulgaria',HR:'Croatia',CY:'Cyprus',CZ:'Czechia',
+  DK:'Denmark',EE:'Estonia',FI:'Finland',FR:'France',DE:'Germany',EL:'Greece',
+  HU:'Hungary',IE:'Ireland',IT:'Italy',LV:'Latvia',LT:'Lithuania',LU:'Luxembourg',
+  MT:'Malta',NL:'Netherlands',PL:'Poland',PT:'Portugal',RO:'Romania',SK:'Slovakia',
+  SI:'Slovenia',ES:'Spain',SE:'Sweden',IS:'Iceland',LI:'Liechtenstein',NO:'Norway',CH:'Switzerland'
+};
+
+// 5-year age bands from Eurostat
+const AGE_BANDS_5 = [
+  'Y_LT5','Y5-9','Y10-14','Y15-19','Y20-24','Y25-29','Y30-34','Y35-39',
+  'Y40-44','Y45-49','Y50-54','Y55-59','Y60-64','Y65-69','Y70-74','Y75-79',
+  'Y80-84','Y85-89','Y_GE90'
+];
+
+// Map band code to [low, high] ages
+function bandRange(code) {
+  if (code === 'Y_LT5') return [0, 4];
+  if (code === 'Y_GE90') return [90, 120];
+  const m = code.match(/Y(\d+)-(\d+)/);
+  return m ? [+m[1], +m[2]] : null;
+}
+
+function bandLabel(code) {
+  if (code === 'Y_LT5') return '0-4';
+  if (code === 'Y_GE90') return '90+';
+  const r = bandRange(code);
+  return r ? `${r[0]}-${r[1]}` : code;
+}
+
+// State
+let geoLabels = {};    // geo code -> label
+let availableYears = [];
+let populationData = null; // Map<string, number> keyed by "sex|age|geo"
+
+// DOM refs
+const countryEl = document.getElementById('country');
+const yearEl = document.getElementById('year');
+const sampleEl = document.getElementById('sampleSize');
+const minAgeEl = document.getElementById('minAge');
+const maxAgeEl = document.getElementById('maxAge');
+const buildBtn = document.getElementById('buildBtn');
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+
+// Init age dropdowns (1-year increments)
+function initAgeDropdowns() {
+  const ages = [];
+  for (let a = 0; a <= 100; a++) ages.push(a);
+  minAgeEl.innerHTML = ages.map(a => `<option value="${a}" ${a===18?'selected':''}>${a}</option>`).join('');
+  maxAgeEl.innerHTML = ages.map(a => `<option value="${a}" ${a===65?'selected':''}>${a}</option>`).join('');
+}
+
+// Init country dropdown
+function initCountryDropdown() {
+  const sorted = Object.entries(COUNTRIES).sort((a,b) => a[1].localeCompare(b[1]));
+  countryEl.innerHTML = '<option value="">-- Select country --</option>' +
+    sorted.map(([c,n]) => `<option value="${c}">${n}</option>`).join('');
+}
+
+// Status helpers
+function showStatus(type, msg) {
+  statusEl.className = `status ${type}`;
+  statusEl.innerHTML = (type === 'loading' ? '<span class="spinner"></span>' : '') + msg;
+}
+function hideStatus() { statusEl.className = 'status'; statusEl.innerHTML = ''; }
+
+// Build URL with repeated params (Eurostat requires &geo=X&geo=Y, not geo=X,Y)
+function buildApiUrl(params) {
+  const parts = ['format=JSON', 'lang=en'];
+  for (const [key, val] of Object.entries(params)) {
+    if (Array.isArray(val)) {
+      for (const v of val) parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+    } else {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+    }
+  }
+  return API_BASE + '?' + parts.join('&');
+}
+
+async function apiFetch(params) {
+  const url = buildApiUrl(params);
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`API error ${resp.status}: ${resp.statusText}`);
+  return resp.json();
+}
+
+// Parse JSON-stat response into a map
+function parseJsonStat(data) {
+  const dims = data.id;       // e.g. ['freq','unit','sex','age','geo','time']
+  const sizes = data.size;
+  const values = data.value;   // sparse object: flat_index -> value
+
+  // Build stride array
+  const strides = new Array(dims.length);
+  strides[dims.length - 1] = 1;
+  for (let i = dims.length - 2; i >= 0; i--) {
+    strides[i] = strides[i + 1] * sizes[i + 1];
+  }
+
+  // Build dimension index maps: dim name -> { code -> position }
+  const dimIndex = {};
+  const dimLabels = {};
+  for (const d of dims) {
+    const cat = data.dimension[d].category;
+    dimIndex[d] = cat.index;
+    dimLabels[d] = cat.label || {};
+  }
+
+  return { dims, sizes, strides, values, dimIndex, dimLabels };
+}
+
+function lookupValue(parsed, coords) {
+  let flatIdx = 0;
+  for (let i = 0; i < parsed.dims.length; i++) {
+    const dim = parsed.dims[i];
+    const pos = parsed.dimIndex[dim][coords[dim]];
+    if (pos === undefined) return null;
+    flatIdx += pos * parsed.strides[i];
+  }
+  const v = parsed.values[flatIdx];
+  return v !== undefined ? v : null;
+}
+
+// Discover available years
+async function fetchYears() {
+  showStatus('loading', 'Discovering available years...');
+  try {
+    const data = await apiFetch({ sex: 'T', age: 'TOTAL', geo: 'EU27_2020', unit: 'NR' });
+    const parsed = parseJsonStat(data);
+    const timeIdx = parsed.dimIndex['time'] || {};
+    availableYears = Object.keys(timeIdx).sort().reverse();
+    yearEl.innerHTML = availableYears.map(y => `<option value="${y}">${y}</option>`).join('');
+    hideStatus();
+    buildBtn.disabled = false;
+  } catch (e) {
+    showStatus('error', 'Failed to fetch year data: ' + e.message);
+  }
+}
+
+// Geo catalog cache: { year -> { geoCode -> label } }
+let geoCatalog = {};
+
+async function fetchGeoCatalog(year) {
+  if (geoCatalog[year]) return geoCatalog[year];
+  showStatus('loading', 'Fetching region catalog (one-time)...');
+  const data = await apiFetch({ sex: 'T', age: 'TOTAL', unit: 'NR', time: year });
+  const parsed = parseJsonStat(data);
+  const labels = parsed.dimLabels['geo'] || {};
+  geoCatalog[year] = labels;
+  return labels;
+}
+
+// Fetch population for a country
+async function fetchPopulation(countryCode, year) {
+  const nutsLevel = +document.querySelector('input[name="nuts"]:checked').value;
+  const geoLen = 2 + nutsLevel; // e.g. NUTS2 = 4 chars
+
+  // Get full geo catalog to discover region codes
+  const catalog = await fetchGeoCatalog(year);
+  const allGeos = Object.keys(catalog);
+
+  // Filter to requested NUTS level, exclude deprecated codes (contain parenthetical like "NUTS 2016")
+  let targetGeos = allGeos.filter(g =>
+    g.startsWith(countryCode) && g.length === geoLen &&
+    !/\(NUTS\s/.test(catalog[g])
+  );
+
+  // For small countries that might not have sub-regions at this NUTS level
+  if (targetGeos.length === 0) {
+    targetGeos = allGeos.filter(g => g === countryCode);
+    if (targetGeos.length === 0) {
+      throw new Error(`No regions found for ${COUNTRIES[countryCode]} at NUTS${nutsLevel}`);
+    }
+  }
+
+  // Collect geo labels
+  geoLabels = {};
+  for (const g of targetGeos) {
+    geoLabels[g] = catalog[g] || g;
+  }
+
+  // Batch fetch - max 30 geos per request to stay under URL limits
+  const BATCH = 30;
+  const results = new Map();
+  const sexCodes = ['M', 'F'];
+  const ageCodes = AGE_BANDS_5;
+
+  for (let i = 0; i < targetGeos.length; i += BATCH) {
+    const batch = targetGeos.slice(i, i + BATCH);
+    const pctDone = Math.round((i / targetGeos.length) * 100);
+    showStatus('loading', `Fetching population data... ${pctDone}% (${i}/${targetGeos.length} regions)`);
+
+    const data = await apiFetch({
+      sex: sexCodes,
+      age: ageCodes,
+      geo: batch,
+      unit: 'NR',
+      time: year
+    });
+    const parsed = parseJsonStat(data);
+
+    // Extract values
+    for (const geo of batch) {
+      for (const sex of sexCodes) {
+        for (const age of ageCodes) {
+          const coords = { freq: 'A', unit: 'NR', sex, age, geo, time: year };
+          const val = lookupValue(parsed, coords);
+          if (val !== null && val > 0) {
+            results.set(`${sex}|${age}|${geo}`, val);
+          }
+        }
+      }
+    }
+  }
+
+  populationData = results;
+  return results;
+}
+
+// Filter age bands based on min/max age selection
+function getFilteredAgeBands(minAge, maxAge) {
+  const filtered = [];
+  for (const band of AGE_BANDS_5) {
+    const r = bandRange(band);
+    if (!r) continue;
+    if (r[1] < minAge || r[0] > maxAge) continue;
+    // Calculate overlap fraction for partial bands
+    const overlapLow = Math.max(r[0], minAge);
+    const overlapHigh = Math.min(r[1], maxAge);
+    const bandWidth = r[1] - r[0] + 1;
+    const overlapWidth = overlapHigh - overlapLow + 1;
+    const fraction = overlapWidth / bandWidth;
+    // Label reflects actual included range
+    const label = band === 'Y_GE90'
+      ? `${overlapLow}+`
+      : `${overlapLow}-${overlapHigh}`;
+    filtered.push({ code: band, fraction, label });
+  }
+  return filtered;
+}
+
+// Merge 5-year bands into 10-year if requested
+function mergeAgeBands(bands, grouping) {
+  if (grouping === 5) return bands.map(b => ({ codes: [b.code], fractions: [b.fraction], label: b.label }));
+
+  // 10-year grouping: pair consecutive bands
+  const merged = [];
+  let i = 0;
+  while (i < bands.length) {
+    const r1 = bandRange(bands[i].code);
+    if (i + 1 < bands.length) {
+      const r2 = bandRange(bands[i + 1].code);
+      // Check if they form a natural 10-year group (e.g. 20-24 + 25-29 = 20-29)
+      if (r1 && r2 && r1[0] % 10 === 0 && r2[0] === r1[0] + 5) {
+        // Use the actual low from first band's label and high from second band's label
+        const lowLabel = bands[i].label.split('-')[0];
+        const highPart = bands[i + 1].label;
+        const highLabel = highPart.includes('+') ? highPart : highPart.split('-')[1];
+        merged.push({
+          codes: [bands[i].code, bands[i + 1].code],
+          fractions: [bands[i].fraction, bands[i + 1].fraction],
+          label: highPart.includes('+') ? `${lowLabel}+` : `${lowLabel}-${highLabel}`
+        });
+        i += 2;
+        continue;
+      }
+    }
+    merged.push({ codes: [bands[i].code], fractions: [bands[i].fraction], label: bands[i].label });
+    i++;
+  }
+  return merged;
+}
+
+// Aggregate population from the data map
+function aggregatePop(sexFilter, ageBands, geoFilter) {
+  let total = 0;
+  const sexes = sexFilter ? [sexFilter] : ['M', 'F'];
+  const geos = geoFilter ? [geoFilter] : Object.keys(geoLabels);
+
+  for (const sex of sexes) {
+    for (const ab of ageBands) {
+      for (let k = 0; k < ab.codes.length; k++) {
+        const code = ab.codes[k];
+        const frac = ab.fractions[k];
+        for (const geo of geos) {
+          const val = populationData.get(`${sex}|${code}|${geo}`) || 0;
+          total += val * frac;
+        }
+      }
+    }
+  }
+  return Math.round(total);
+}
+
+// Largest remainder rounding
+function largestRemainder(proportions, total) {
+  const raw = proportions.map(p => p * total);
+  const floors = raw.map(Math.floor);
+  let remainder = total - floors.reduce((a, b) => a + b, 0);
+
+  const fractional = raw.map((v, i) => ({ i, frac: v - floors[i] }));
+  fractional.sort((a, b) => b.frac - a.frac);
+
+  for (let k = 0; k < remainder; k++) {
+    floors[fractional[k].i]++;
+  }
+  return floors;
+}
+
+// Build quotas
+function buildQuotas() {
+  const sampleSize = +sampleEl.value;
+  const minAge = +minAgeEl.value;
+  const maxAge = +maxAgeEl.value;
+  const grouping = +document.querySelector('input[name="agegrp"]:checked').value;
+
+  if (minAge >= maxAge) {
+    showStatus('error', 'Min age must be less than max age.');
+    return;
+  }
+
+  const filteredBands = getFilteredAgeBands(minAge, maxAge);
+  const ageBands = mergeAgeBands(filteredBands, grouping);
+  const geos = Object.keys(geoLabels);
+
+  // Total filtered population
+  const totalPop = aggregatePop(null, ageBands, null);
+  if (totalPop === 0) {
+    showStatus('error', 'No population data found for the selected parameters.');
+    return;
+  }
+
+  // --- Sex distribution ---
+  const sexPops = ['M', 'F'].map(s => aggregatePop(s, ageBands, null));
+  const sexProps = sexPops.map(p => p / totalPop);
+  const sexQuotas = largestRemainder(sexProps, sampleSize);
+
+  renderTable('sexTable', {
+    headers: ['Sex', 'Population', '%', 'Quota'],
+    rows: [
+      ['Male', fmt(sexPops[0]), pct(sexProps[0]), sexQuotas[0]],
+      ['Female', fmt(sexPops[1]), pct(sexProps[1]), sexQuotas[1]]
+    ],
+    footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
+    numCols: [1, 2, 3]
+  });
+
+  // --- Age distribution ---
+  const agePops = ageBands.map(ab => aggregatePop(null, [ab], null));
+  const ageProps = agePops.map(p => p / totalPop);
+  const ageQuotas = largestRemainder(ageProps, sampleSize);
+
+  renderTable('ageTable', {
+    headers: ['Age Group', 'Population', '%', 'Quota'],
+    rows: ageBands.map((ab, i) => [ab.label, fmt(agePops[i]), pct(ageProps[i]), ageQuotas[i]]),
+    footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
+    numCols: [1, 2, 3]
+  });
+
+  // --- Regional distribution ---
+  const regPops = geos.map(g => aggregatePop(null, ageBands, g));
+  const regProps = regPops.map(p => p / totalPop);
+  const regQuotas = largestRemainder(regProps, sampleSize);
+
+  renderTable('regionTable', {
+    headers: ['Region', 'Code', 'Population', '%', 'Quota'],
+    rows: geos.map((g, i) => [geoLabels[g], g, fmt(regPops[i]), pct(regProps[i]), regQuotas[i]]),
+    footer: ['Total', '', fmt(totalPop), '100.0%', sampleSize],
+    numCols: [2, 3, 4]
+  });
+
+  // --- Cross-tab: Sex x Age ---
+  const crossPops = [];
+  const crossProps = [];
+  for (const sex of ['M', 'F']) {
+    for (const ab of ageBands) {
+      const pop = aggregatePop(sex, [ab], null);
+      crossPops.push(pop);
+      crossProps.push(pop / totalPop);
+    }
+  }
+  const crossQuotas = largestRemainder(crossProps, sampleSize);
+
+  const crossHeaders = ['', ...ageBands.map(ab => ab.label), 'Total'];
+  const crossRows = [];
+  for (let s = 0; s < 2; s++) {
+    const sexLabel = s === 0 ? 'Male' : 'Female';
+    const row = [sexLabel];
+    let rowTotal = 0;
+    for (let a = 0; a < ageBands.length; a++) {
+      const q = crossQuotas[s * ageBands.length + a];
+      row.push(q);
+      rowTotal += q;
+    }
+    row.push(rowTotal);
+    crossRows.push(row);
+  }
+  // Column totals
+  const colTotals = ['Total'];
+  for (let a = 0; a < ageBands.length; a++) {
+    colTotals.push(crossQuotas[a] + crossQuotas[ageBands.length + a]);
+  }
+  colTotals.push(sampleSize);
+
+  renderTable('crossTable', {
+    headers: crossHeaders,
+    rows: crossRows,
+    footer: colTotals,
+    numCols: Array.from({ length: ageBands.length + 1 }, (_, i) => i + 1)
+  });
+
+  resultsEl.classList.add('visible');
+  showStatus('success', `Quotas built for ${COUNTRIES[countryEl.value]} (${yearEl.value}): ${fmt(totalPop)} population, n=${fmt(sampleSize)} sample.`);
+}
+
+// Render a table
+function renderTable(tableId, { headers, rows, footer, numCols }) {
+  const nc = new Set(numCols || []);
+  let html = '<thead><tr>';
+  headers.forEach((h, i) => { html += `<th${nc.has(i) ? ' class="num"' : ''}>${h}</th>`; });
+  html += '</tr></thead><tbody>';
+  for (const row of rows) {
+    html += '<tr>';
+    row.forEach((cell, i) => { html += `<td${nc.has(i) ? ' class="num"' : ''}>${cell}</td>`; });
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  if (footer) {
+    html += '<tfoot><tr>';
+    footer.forEach((cell, i) => { html += `<td${nc.has(i) ? ' class="num"' : ''}>${cell}</td>`; });
+    html += '</tr></tfoot>';
+  }
+  document.getElementById(tableId).innerHTML = html;
+}
+
+// Formatting helpers
+function fmt(n) { return Number(n).toLocaleString('en'); }
+function pct(p) { return (p * 100).toFixed(1) + '%'; }
+
+// Table to TSV string
+function tableToTSV(tableId) {
+  const table = document.getElementById(tableId);
+  const rows = [];
+  for (const tr of table.querySelectorAll('tr')) {
+    const cells = [];
+    for (const cell of tr.querySelectorAll('th, td')) {
+      cells.push(cell.textContent);
+    }
+    rows.push(cells.join('\t'));
+  }
+  return rows.join('\n');
+}
+
+// Copy table to clipboard
+function copyTable(tableId) {
+  const tsv = tableToTSV(tableId);
+  navigator.clipboard.writeText(tsv).then(() => {
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// Download CSV
+function downloadCSV(tableId, filename) {
+  const table = document.getElementById(tableId);
+  const rows = [];
+  for (const tr of table.querySelectorAll('tr')) {
+    const cells = [];
+    for (const cell of tr.querySelectorAll('th, td')) {
+      let text = cell.textContent.replace(/"/g, '""');
+      if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+        text = `"${text}"`;
+      }
+      cells.push(text);
+    }
+    rows.push(cells.join(','));
+  }
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Event listeners
+buildBtn.addEventListener('click', async () => {
+  const country = countryEl.value;
+  if (!country) { showStatus('error', 'Please select a country.'); return; }
+
+  buildBtn.disabled = true;
+  resultsEl.classList.remove('visible');
+
+  try {
+    await fetchPopulation(country, yearEl.value);
+    buildQuotas();
+  } catch (e) {
+    showStatus('error', 'Error: ' + e.message);
+  } finally {
+    buildBtn.disabled = false;
+  }
+});
+
+// Recalculate on parameter changes (if data already loaded)
+for (const el of [sampleEl, minAgeEl, maxAgeEl]) {
+  el.addEventListener('change', () => { if (populationData) buildQuotas(); });
+}
+for (const radio of document.querySelectorAll('input[name="agegrp"]')) {
+  radio.addEventListener('change', () => { if (populationData) buildQuotas(); });
+}
+
+// Init
+initAgeDropdowns();
+initCountryDropdown();
+fetchYears();
+</script>
+</body>
+</html>
