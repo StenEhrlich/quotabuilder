@@ -109,6 +109,14 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
       <select id="maxAge"></select>
     </div>
     <div class="control-group">
+      <label>Sex</label>
+      <div class="radio-group" id="sexFilter">
+        <label><input type="radio" name="sexf" value="MF" checked><span>Both</span></label>
+        <label><input type="radio" name="sexf" value="M"><span>Male</span></label>
+        <label><input type="radio" name="sexf" value="F"><span>Female</span></label>
+      </div>
+    </div>
+    <div class="control-group">
       <label>Age Grouping</label>
       <div class="radio-group" id="ageGrouping">
         <label><input type="radio" name="agegrp" value="5" checked><span>5-year</span></label>
@@ -489,6 +497,8 @@ function buildQuotas() {
   const minAge = +minAgeEl.value;
   const maxAge = +maxAgeEl.value;
   const grouping = +document.querySelector('input[name="agegrp"]:checked').value;
+  const sexFilterVal = document.querySelector('input[name="sexf"]:checked').value;
+  const sexes = sexFilterVal === 'MF' ? ['M', 'F'] : [sexFilterVal];
 
   if (minAge >= maxAge) {
     showStatus('error', 'Min age must be less than max age.');
@@ -499,30 +509,36 @@ function buildQuotas() {
   const ageBands = mergeAgeBands(filteredBands, grouping);
   const geos = Object.keys(geoLabels);
 
-  // Total filtered population
-  const totalPop = aggregatePop(null, ageBands, null);
+  // Total filtered population (respecting sex filter)
+  const totalPop = sexes.reduce((sum, s) => sum + aggregatePop(s, ageBands, null), 0);
   if (totalPop === 0) {
     showStatus('error', 'No population data found for the selected parameters.');
     return;
   }
 
-  // --- Sex distribution ---
-  const sexPops = ['M', 'F'].map(s => aggregatePop(s, ageBands, null));
-  const sexProps = sexPops.map(p => p / totalPop);
-  const sexQuotas = largestRemainder(sexProps, sampleSize);
+  // --- Sex distribution (only shown when both sexes selected) ---
+  const sexSection = document.getElementById('sexSection');
+  if (sexes.length === 2) {
+    sexSection.style.display = '';
+    const sexPops = sexes.map(s => aggregatePop(s, ageBands, null));
+    const sexProps = sexPops.map(p => p / totalPop);
+    const sexQuotas = largestRemainder(sexProps, sampleSize);
 
-  renderTable('sexTable', {
-    headers: ['Sex', 'Population', '%', 'Quota'],
-    rows: [
-      ['Male', fmt(sexPops[0]), pct(sexProps[0]), sexQuotas[0]],
-      ['Female', fmt(sexPops[1]), pct(sexProps[1]), sexQuotas[1]]
-    ],
-    footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
-    numCols: [1, 2, 3]
-  });
+    renderTable('sexTable', {
+      headers: ['Sex', 'Population', '%', 'Quota'],
+      rows: [
+        ['Male', fmt(sexPops[0]), pct(sexProps[0]), sexQuotas[0]],
+        ['Female', fmt(sexPops[1]), pct(sexProps[1]), sexQuotas[1]]
+      ],
+      footer: ['Total', fmt(totalPop), '100.0%', sampleSize],
+      numCols: [1, 2, 3]
+    });
+  } else {
+    sexSection.style.display = 'none';
+  }
 
   // --- Age distribution ---
-  const agePops = ageBands.map(ab => aggregatePop(null, [ab], null));
+  const agePops = ageBands.map(ab => sexes.reduce((sum, s) => sum + aggregatePop(s, [ab], null), 0));
   const ageProps = agePops.map(p => p / totalPop);
   const ageQuotas = largestRemainder(ageProps, sampleSize);
 
@@ -534,7 +550,7 @@ function buildQuotas() {
   });
 
   // --- Regional distribution ---
-  const regPops = geos.map(g => aggregatePop(null, ageBands, g));
+  const regPops = geos.map(g => sexes.reduce((sum, s) => sum + aggregatePop(s, ageBands, g), 0));
   const regProps = regPops.map(p => p / totalPop);
   const regQuotas = largestRemainder(regProps, sampleSize);
 
@@ -545,45 +561,50 @@ function buildQuotas() {
     numCols: [2, 3, 4]
   });
 
-  // --- Cross-tab: Sex x Age ---
-  const crossPops = [];
-  const crossProps = [];
-  for (const sex of ['M', 'F']) {
-    for (const ab of ageBands) {
-      const pop = aggregatePop(sex, [ab], null);
-      crossPops.push(pop);
-      crossProps.push(pop / totalPop);
+  // --- Cross-tab: Sex x Age (only shown when both sexes selected) ---
+  const crossSection = document.getElementById('crossSection');
+  if (sexes.length === 2) {
+    crossSection.style.display = '';
+    const crossPops = [];
+    const crossProps = [];
+    for (const sex of sexes) {
+      for (const ab of ageBands) {
+        const pop = aggregatePop(sex, [ab], null);
+        crossPops.push(pop);
+        crossProps.push(pop / totalPop);
+      }
     }
-  }
-  const crossQuotas = largestRemainder(crossProps, sampleSize);
+    const crossQuotas = largestRemainder(crossProps, sampleSize);
 
-  const crossHeaders = ['', ...ageBands.map(ab => ab.label), 'Total'];
-  const crossRows = [];
-  for (let s = 0; s < 2; s++) {
-    const sexLabel = s === 0 ? 'Male' : 'Female';
-    const row = [sexLabel];
-    let rowTotal = 0;
+    const crossHeaders = ['', ...ageBands.map(ab => ab.label), 'Total'];
+    const crossRows = [];
+    for (let s = 0; s < 2; s++) {
+      const sexLabel = s === 0 ? 'Male' : 'Female';
+      const row = [sexLabel];
+      let rowTotal = 0;
+      for (let a = 0; a < ageBands.length; a++) {
+        const q = crossQuotas[s * ageBands.length + a];
+        row.push(q);
+        rowTotal += q;
+      }
+      row.push(rowTotal);
+      crossRows.push(row);
+    }
+    const colTotals = ['Total'];
     for (let a = 0; a < ageBands.length; a++) {
-      const q = crossQuotas[s * ageBands.length + a];
-      row.push(q);
-      rowTotal += q;
+      colTotals.push(crossQuotas[a] + crossQuotas[ageBands.length + a]);
     }
-    row.push(rowTotal);
-    crossRows.push(row);
-  }
-  // Column totals
-  const colTotals = ['Total'];
-  for (let a = 0; a < ageBands.length; a++) {
-    colTotals.push(crossQuotas[a] + crossQuotas[ageBands.length + a]);
-  }
-  colTotals.push(sampleSize);
+    colTotals.push(sampleSize);
 
-  renderTable('crossTable', {
-    headers: crossHeaders,
-    rows: crossRows,
-    footer: colTotals,
-    numCols: Array.from({ length: ageBands.length + 1 }, (_, i) => i + 1)
-  });
+    renderTable('crossTable', {
+      headers: crossHeaders,
+      rows: crossRows,
+      footer: colTotals,
+      numCols: Array.from({ length: ageBands.length + 1 }, (_, i) => i + 1)
+    });
+  } else {
+    crossSection.style.display = 'none';
+  }
 
   resultsEl.classList.add('visible');
   showStatus('success', `Quotas built for ${COUNTRIES[countryEl.value]} (${yearEl.value}): ${fmt(totalPop)} population, n=${fmt(sampleSize)} sample.`);
@@ -683,7 +704,7 @@ buildBtn.addEventListener('click', async () => {
 for (const el of [sampleEl, minAgeEl, maxAgeEl]) {
   el.addEventListener('change', () => { if (populationData) buildQuotas(); });
 }
-for (const radio of document.querySelectorAll('input[name="agegrp"]')) {
+for (const radio of document.querySelectorAll('input[name="agegrp"], input[name="sexf"]')) {
   radio.addEventListener('change', () => { if (populationData) buildQuotas(); });
 }
 
