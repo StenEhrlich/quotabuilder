@@ -64,8 +64,16 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 .cross-tab-wrap th:first-child { left: 0; z-index: 3; }
 .cross-tab-wrap td:first-child { position: sticky; left: 0; background: var(--card-bg); font-weight: 600; z-index: 1; }
 .cross-tab-wrap tr:nth-child(even) td:first-child { background: var(--row-alt); }
+.extra-data { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+.extra-data h3 { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.7rem; }
+.extra-data-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.4rem; }
+.extra-data-list label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; padding: 0.4rem 0.6rem; border-radius: 4px; transition: background 0.1s; }
+.extra-data-list label:hover { background: var(--accent-light); }
+.extra-data-list input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+.extra-data-list .year-badge { font-size: 0.75rem; color: var(--text-muted); background: var(--row-alt); border: 1px solid var(--border); border-radius: 3px; padding: 0.1rem 0.4rem; margin-left: auto; white-space: nowrap; }
 @media (max-width: 768px) {
   .controls { grid-template-columns: 1fr 1fr; }
+  .extra-data-list { grid-template-columns: 1fr; }
   header { padding: 1rem; }
   .container { padding: 1rem; }
 }
@@ -124,6 +132,19 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
     <div class="control-group">
       <label>&nbsp;</label>
       <button class="btn btn-primary" id="buildBtn" disabled>Build Quotas</button>
+    </div>
+  </div>
+
+  <div class="extra-data">
+    <h3>Additional quota variables (country-level)</h3>
+    <div class="extra-data-list">
+      <label><input type="checkbox" name="extra" value="educ" checked> Education level (ISCED) <span class="year-badge" id="yr_educ">...</span></label>
+      <label><input type="checkbox" name="extra" value="employ" checked> Employment status <span class="year-badge" id="yr_employ">...</span></label>
+      <label><input type="checkbox" name="extra" value="urban" checked> Degree of urbanisation <span class="year-badge" id="yr_urban">...</span></label>
+      <label><input type="checkbox" name="extra" value="occup"> Occupation (ISCO-08) <span class="year-badge" id="yr_occup">...</span></label>
+      <label><input type="checkbox" name="extra" value="citizen"> Citizenship <span class="year-badge" id="yr_citizen">...</span></label>
+      <label><input type="checkbox" name="extra" value="cob"> Country of birth <span class="year-badge" id="yr_cob">...</span></label>
+      <label><input type="checkbox" name="extra" value="hh"> Household composition <span class="year-badge" id="yr_hh">...</span></label>
     </div>
   </div>
 
@@ -286,6 +307,17 @@ const CITIZEN_CODES = { 'NAT':'National', 'EU27_2020_FOR':'Other EU citizen', 'N
 const COB_CODES = { 'NAT':'Born in country', 'EU27_2020_FOR':'Born in other EU country', 'NEU27_2020_FOR':'Born outside EU' };
 const HH_CODES = { 'A1':'Single person', 'CPL_NCH':'Couple, no children', 'CPL_CH':'Couple with children', 'A1_CH':'Single parent' };
 
+// Dataset configs for extra variables
+const EXTRA_DATASETS = {
+  educ:    { dataset: 'lfsa_pgaed',    probe: { sex:'T', isced11:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
+  employ:  { dataset: 'lfsa_pgauws',   probe: { sex:'T', wstatus:'POP', deg_urb:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
+  urban:   { dataset: 'lfsa_pgauws',   probe: null }, // same dataset as employ
+  occup:   { dataset: 'lfsa_egais',    probe: { sex:'T', wstatus:'EMP', isco08:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
+  citizen: { dataset: 'lfsa_pganws',   probe: { sex:'T', citizen:'TOTAL', wstatus:'POP', age:'Y15-64', unit:'THS_PER' } },
+  cob:     { dataset: 'lfsa_pgacws',   probe: { sex:'T', c_birth:'TOTAL', wstatus:'POP', age:'Y15-64', unit:'THS_PER' } },
+  hh:      { dataset: 'lfst_hhnhtych', probe: { agechild:'TOTAL', n_child:'TOTAL', phhcomp:'TOTAL', unit:'THS_HH' } }
+};
+
 function bandRange(code) {
   if (code === 'Y_LT5') return [0, 4];
   if (code === 'Y_GE90') return [90, 120];
@@ -377,6 +409,17 @@ function lookupValue(parsed, coords) {
 }
 
 // --- Data fetchers ---
+// Discover latest year for an extra dataset
+async function probeLatestYear(key) {
+  const cfg = EXTRA_DATASETS[key];
+  if (!cfg || !cfg.probe) return null;
+  try {
+    const data = await apiFetch(cfg.dataset, { ...cfg.probe, geo: 'EU27_2020' });
+    const times = Object.keys(parseJsonStat(data).dimIndex['time'] || {}).sort().reverse();
+    return times[0] || null;
+  } catch { return null; }
+}
+
 async function fetchYears() {
   showStatus('loading', 'Discovering available years...');
   try {
@@ -386,9 +429,26 @@ async function fetchYears() {
     yearEl.innerHTML = availableYears.map(y => `<option value="${y}">${y}</option>`).join('');
     hideStatus();
     buildBtn.disabled = false;
+
+    // Probe extra dataset years in parallel (non-blocking)
+    const probeKeys = Object.keys(EXTRA_DATASETS).filter(k => EXTRA_DATASETS[k].probe);
+    const results = await Promise.all(probeKeys.map(k => probeLatestYear(k)));
+    const latestYears = {};
+    probeKeys.forEach((k, i) => { latestYears[k] = results[i]; });
+    // employ and urban share lfsa_pgauws
+    latestYears['urban'] = latestYears['employ'];
+    // Update badges
+    for (const [key, yr] of Object.entries(latestYears)) {
+      const badge = document.getElementById('yr_' + key);
+      if (badge) badge.textContent = yr ? `latest: ${yr}` : 'N/A';
+    }
   } catch (e) {
     showStatus('error', 'Failed to load: ' + e.message);
   }
+}
+
+function getSelectedExtras() {
+  return Array.from(document.querySelectorAll('input[name="extra"]:checked')).map(el => el.value);
 }
 
 let geoCatalog = {};
@@ -466,44 +526,55 @@ async function fetchLfs(dataset, params, keyDims) {
 }
 
 async function fetchAllLfs(cc, year) {
-  showStatus('loading', 'Fetching education, employment, urbanisation, occupation, citizenship, country of birth, household data...');
+  const selected = getSelectedExtras();
+  if (selected.length === 0) { lfsData = {}; return; }
+
+  const labels = selected.map(s => {
+    return { educ:'education', employ:'employment', urban:'urbanisation',
+             occup:'occupation', citizen:'citizenship', cob:'country of birth', hh:'household' }[s] || s;
+  });
+  showStatus('loading', `Fetching ${labels.join(', ')} data...`);
 
   const sexArr = ['M','F'];
-  const [educ, employUrban, occup, citizen, cob, hh] = await Promise.all([
-    // Education
-    fetchLfs('lfsa_pgaed', {
+  const needEmployUrban = selected.includes('employ') || selected.includes('urban');
+
+  const fetches = {
+    educ: selected.includes('educ') ? fetchLfs('lfsa_pgaed', {
       sex: sexArr, isced11: Object.keys(EDUC_LEVELS), age: LFS_AGE_BANDS,
       geo: cc, unit: 'THS_PER', time: year
-    }, ['sex','isced11','age']),
-    // Employment + Urbanisation
-    fetchLfs('lfsa_pgauws', {
+    }, ['sex','isced11','age']) : Promise.resolve(null),
+
+    employUrban: needEmployUrban ? fetchLfs('lfsa_pgauws', {
       sex: sexArr, wstatus: Object.keys(EMPLOY_STATUSES),
       deg_urb: Object.keys(URBAN_DEGREES), age: LFS_AGE_BANDS,
       geo: cc, unit: 'THS_PER', time: year
-    }, ['sex','wstatus','deg_urb','age']),
-    // Occupation
-    fetchLfs('lfsa_egais', {
+    }, ['sex','wstatus','deg_urb','age']) : Promise.resolve(null),
+
+    occup: selected.includes('occup') ? fetchLfs('lfsa_egais', {
       sex: sexArr, wstatus: 'EMP', isco08: Object.keys(ISCO_CODES),
       age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
-    }, ['sex','isco08','age']),
-    // Citizenship
-    fetchLfs('lfsa_pganws', {
+    }, ['sex','isco08','age']) : Promise.resolve(null),
+
+    citizen: selected.includes('citizen') ? fetchLfs('lfsa_pganws', {
       sex: sexArr, citizen: Object.keys(CITIZEN_CODES), wstatus: 'POP',
       age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
-    }, ['sex','citizen','age']),
-    // Country of birth
-    fetchLfs('lfsa_pgacws', {
+    }, ['sex','citizen','age']) : Promise.resolve(null),
+
+    cob: selected.includes('cob') ? fetchLfs('lfsa_pgacws', {
       sex: sexArr, c_birth: Object.keys(COB_CODES), wstatus: 'POP',
       age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
-    }, ['sex','c_birth','age']),
-    // Household composition
-    fetchLfs('lfst_hhnhtych', {
+    }, ['sex','c_birth','age']) : Promise.resolve(null),
+
+    hh: selected.includes('hh') ? fetchLfs('lfst_hhnhtych', {
       agechild: 'TOTAL', n_child: 'TOTAL',
       phhcomp: Object.keys(HH_CODES), geo: cc, unit: 'THS_HH', time: year
-    }, ['phhcomp'])
-  ]);
+    }, ['phhcomp']) : Promise.resolve(null)
+  };
 
-  lfsData = { educ, employUrban, occup, citizen, cob, hh };
+  const keys = Object.keys(fetches);
+  const results = await Promise.all(Object.values(fetches));
+  lfsData = {};
+  keys.forEach((k, i) => { lfsData[k] = results[i]; });
 }
 
 // --- Age filtering ---
@@ -574,17 +645,15 @@ function aggregateLfsGeneric(map, sexes, minAge, maxAge, filterFn) {
   let total = 0;
   for (const [key, val] of map) {
     if (!filterFn(key)) continue;
-    // Find which sex this belongs to (first segment for sex-aware datasets)
     const parts = key.split('|');
-    const sex = parts[0];
-    if (sex === 'M' || sex === 'F') {
-      if (!sexes.includes(sex)) continue;
-    }
-    // Find age (last segment if it starts with Y)
-    const lastPart = parts[parts.length - 1];
-    if (LFS_AGE_BANDS.includes(lastPart)) {
-      const frac = lfsAgeFraction(lastPart, minAge, maxAge);
-      if (frac > 0) total += val * 1000 * frac; // THS_PER -> persons
+    // Check sex filter: find M or F anywhere in parts
+    const sexPart = parts.find(p => p === 'M' || p === 'F');
+    if (sexPart && !sexes.includes(sexPart)) continue;
+    // Find age band anywhere in parts
+    const agePart = parts.find(p => LFS_AGE_BANDS.includes(p));
+    if (agePart) {
+      const frac = lfsAgeFraction(agePart, minAge, maxAge);
+      if (frac > 0) total += val * 1000 * frac;
     } else {
       total += val * 1000; // no age dimension (e.g. household)
     }
@@ -676,52 +745,41 @@ function buildQuotas() {
     });
   }
 
-  buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ, 'isced11');
-  buildLfsTable('occupSection','occupTable', ISCO_CODES, 'Occupation', lfsData.occup, 'isco08');
-  buildLfsTable('citizenSection','citizenTable', CITIZEN_CODES, 'Citizenship', lfsData.citizen, 'citizen');
-  buildLfsTable('cobSection','cobTable', COB_CODES, 'Country of Birth', lfsData.cob, 'c_birth');
+  const selected = getSelectedExtras();
 
-  // Employment (from combined employUrban map, sum across all urbanisation)
-  const employSection = document.getElementById('employSection');
-  if (lfsData.employUrban && lfsData.employUrban.size > 0) {
-    const empCodes = Object.keys(EMPLOY_STATUSES);
-    const empPops = empCodes.map(code =>
-      aggregateLfsGeneric(lfsData.employUrban, sexes, minAge, maxAge, key => key.split('|').includes(code))
-    );
-    const empTotal = empPops.reduce((a,b) => a+b, 0);
-    if (empTotal > 0) {
-      employSection.style.display = '';
-      const empQ = largestRemainder(empPops.map(p => p/empTotal), sampleSize);
-      renderTable('employTable', {
-        headers: ['Employment Status','Population (est.)','%','Quota'],
-        rows: empCodes.map((c,i) => [EMPLOY_STATUSES[c],fmt(empPops[i]),pct(empPops[i]/empTotal),empQ[i]]),
-        footer: ['Total',fmt(empTotal),'100.0%',sampleSize], numCols:[1,2,3]
-      });
-    } else employSection.style.display = 'none';
-  } else employSection.style.display = 'none';
+  // Education
+  if (selected.includes('educ')) {
+    buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ);
+  } else document.getElementById('educSection').style.display = 'none';
 
-  // Urbanisation (from combined employUrban map, sum across all employment statuses)
-  const urbanSection = document.getElementById('urbanSection');
-  if (lfsData.employUrban && lfsData.employUrban.size > 0) {
-    const urbCodes = Object.keys(URBAN_DEGREES);
-    const urbPops = urbCodes.map(code =>
-      aggregateLfsGeneric(lfsData.employUrban, sexes, minAge, maxAge, key => key.split('|').includes(code))
-    );
-    const urbTotal = urbPops.reduce((a,b) => a+b, 0);
-    if (urbTotal > 0) {
-      urbanSection.style.display = '';
-      const urbQ = largestRemainder(urbPops.map(p => p/urbTotal), sampleSize);
-      renderTable('urbanTable', {
-        headers: ['Urbanisation','Population (est.)','%','Quota'],
-        rows: urbCodes.map((c,i) => [URBAN_DEGREES[c],fmt(urbPops[i]),pct(urbPops[i]/urbTotal),urbQ[i]]),
-        footer: ['Total',fmt(urbTotal),'100.0%',sampleSize], numCols:[1,2,3]
-      });
-    } else urbanSection.style.display = 'none';
-  } else urbanSection.style.display = 'none';
+  // Occupation
+  if (selected.includes('occup')) {
+    buildLfsTable('occupSection','occupTable', ISCO_CODES, 'Occupation', lfsData.occup);
+  } else document.getElementById('occupSection').style.display = 'none';
 
-  // Household composition (no sex/age filtering)
+  // Citizenship
+  if (selected.includes('citizen')) {
+    buildLfsTable('citizenSection','citizenTable', CITIZEN_CODES, 'Citizenship', lfsData.citizen);
+  } else document.getElementById('citizenSection').style.display = 'none';
+
+  // Country of birth
+  if (selected.includes('cob')) {
+    buildLfsTable('cobSection','cobTable', COB_CODES, 'Country of Birth', lfsData.cob);
+  } else document.getElementById('cobSection').style.display = 'none';
+
+  // Employment
+  if (selected.includes('employ')) {
+    buildLfsTable('employSection','employTable', EMPLOY_STATUSES, 'Employment Status', lfsData.employUrban);
+  } else document.getElementById('employSection').style.display = 'none';
+
+  // Urbanisation
+  if (selected.includes('urban')) {
+    buildLfsTable('urbanSection','urbanTable', URBAN_DEGREES, 'Urbanisation', lfsData.employUrban);
+  } else document.getElementById('urbanSection').style.display = 'none';
+
+  // Household composition
   const hhSection = document.getElementById('hhSection');
-  if (lfsData.hh && lfsData.hh.size > 0) {
+  if (selected.includes('hh') && lfsData.hh && lfsData.hh.size > 0) {
     const hhCodes = Object.keys(HH_CODES);
     const hhPops = hhCodes.map(code => {
       const val = lfsData.hh.get(code);
@@ -834,6 +892,9 @@ for (const el of [sampleEl, minAgeEl, maxAgeEl])
   el.addEventListener('change', () => { if (populationData) buildQuotas(); });
 for (const r of document.querySelectorAll('input[name="agegrp"],input[name="sexf"]'))
   r.addEventListener('change', () => { if (populationData) buildQuotas(); });
+// Extra data checkboxes: just toggle visibility (data already fetched)
+for (const cb of document.querySelectorAll('input[name="extra"]'))
+  cb.addEventListener('change', () => { if (populationData) buildQuotas(); });
 
 initAgeDropdowns();
 initCountryDropdown();
