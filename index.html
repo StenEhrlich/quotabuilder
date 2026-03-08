@@ -151,12 +151,15 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
   <div id="status" class="status"></div>
 
   <div id="results" class="results">
+    <div style="margin-bottom: 1rem; text-align: right;">
+      <button class="btn btn-primary" onclick="downloadAllXLSX()">Download All XLSX</button>
+    </div>
     <div class="table-section" id="sexSection">
       <div class="table-header">
         <h2>Sex Distribution</h2>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('sexTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('sexTable','sex_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('sexTable','sex_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="sexTable"></table></div>
@@ -167,7 +170,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
         <h2>Age Group Distribution</h2>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('ageTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('ageTable','age_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('ageTable','age_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="ageTable"></table></div>
@@ -178,7 +181,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
         <h2>Regional Distribution</h2>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('regionTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('regionTable','region_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('regionTable','region_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="regionTable"></table></div>
@@ -186,10 +189,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="educSection" style="display:none">
       <div class="table-header">
-        <div><h2>Education Level <span class="note">(country-level, ISCED 2011)</span></h2></div>
+        <div><h2>Education Level <span class="note">(country-level, ISCED 2011, exact single-year age data)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('educTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('educTable','education_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('educTable','education_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="educTable"></table></div>
@@ -197,10 +200,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="employSection" style="display:none">
       <div class="table-header">
-        <div><h2>Employment Status <span class="note">(country-level)</span></h2></div>
+        <div><h2>Employment Status <span class="note">(country-level, estimated from 5-year age bands)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('employTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('employTable','employment_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('employTable','employment_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="employTable"></table></div>
@@ -208,10 +211,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="urbanSection" style="display:none">
       <div class="table-header">
-        <div><h2>Degree of Urbanisation <span class="note">(country-level)</span></h2></div>
+        <div><h2>Degree of Urbanisation <span class="note">(country-level, estimated from 5-year age bands)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('urbanTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('urbanTable','urbanisation_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('urbanTable','urbanisation_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="urbanTable"></table></div>
@@ -219,10 +222,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="occupSection" style="display:none">
       <div class="table-header">
-        <div><h2>Occupation (ISCO-08) <span class="note">(country-level, employed persons only)</span></h2></div>
+        <div><h2>Occupation (ISCO-08) <span class="note">(country-level, employed persons only, estimated from broad age bands)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('occupTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('occupTable','occupation_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('occupTable','occupation_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="occupTable"></table></div>
@@ -230,10 +233,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="citizenSection" style="display:none">
       <div class="table-header">
-        <div><h2>Citizenship <span class="note">(country-level)</span></h2></div>
+        <div><h2>Citizenship <span class="note">(country-level, estimated from 5-year age bands)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('citizenTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('citizenTable','citizenship_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('citizenTable','citizenship_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="citizenTable"></table></div>
@@ -241,10 +244,10 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
 
     <div class="table-section" id="cobSection" style="display:none">
       <div class="table-header">
-        <div><h2>Country of Birth <span class="note">(country-level)</span></h2></div>
+        <div><h2>Country of Birth <span class="note">(country-level, estimated from 5-year age bands)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('cobTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('cobTable','country_of_birth_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('cobTable','country_of_birth_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="cobTable"></table></div>
@@ -255,7 +258,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
         <div><h2>Household Composition <span class="note">(country-level, households not persons)</span></h2></div>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('hhTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('hhTable','household_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('hhTable','household_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="table-wrap"><table id="hhTable"></table></div>
@@ -266,7 +269,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
         <h2>Cross-tab: Sex x Age (Interlocked Quotas)</h2>
         <div class="table-actions">
           <button class="btn btn-secondary" onclick="copyTable('crossTable')">Copy</button>
-          <button class="btn btn-secondary" onclick="downloadCSV('crossTable','crosstab_quotas.csv')">CSV</button>
+          <button class="btn btn-secondary" onclick="downloadXLSX('crossTable','crosstab_quotas.xlsx')">XLSX</button>
         </div>
       </div>
       <div class="cross-tab-wrap"><table id="crossTable"></table></div>
@@ -274,6 +277,7 @@ tfoot td { font-weight: 700; border-top: 2px solid var(--accent); background: va
   </div>
 </div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
 const API_BASE = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/';
 
@@ -292,6 +296,15 @@ const AGE_BANDS_5 = [
 ];
 
 const LFS_AGE_BANDS = ['Y15-24','Y25-49','Y50-64','Y_GE65'];
+const LFS_AGE_5Y = ['Y15-19','Y20-24','Y25-29','Y30-34','Y35-39','Y40-44','Y45-49','Y50-54','Y55-59','Y60-64','Y65-69','Y70-74'];
+const LFS_AGE_COARSE = LFS_AGE_BANDS; // alias for datasets with only broad bands
+// Which age bands each dataset supports (finest available)
+const DATASET_AGE_BANDS = {
+  'lfsa_pgauws':   LFS_AGE_5Y,   // employment/urbanisation: 5-year bands available
+  'lfsa_egais':    LFS_AGE_BANDS, // occupation: only broad bands
+  'lfsa_pganws':   LFS_AGE_5Y,   // citizenship: 5-year bands available
+  'lfsa_pgacws':   LFS_AGE_5Y,   // country of birth: 5-year bands available
+};
 
 const EDUC_LEVELS = { 'ED0-2':'Low (ISCED 0-2)', 'ED3_4':'Medium (ISCED 3-4)', 'ED5-8':'High (ISCED 5-8)' };
 const EMPLOY_STATUSES = { 'EMP':'Employed', 'UNE':'Unemployed', 'INAC':'Inactive' };
@@ -309,7 +322,7 @@ const HH_CODES = { 'A1':'Single person', 'CPL_NCH':'Couple, no children', 'CPL_C
 
 // Dataset configs for extra variables
 const EXTRA_DATASETS = {
-  educ:    { dataset: 'lfsa_pgaed',    probe: { sex:'T', isced11:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
+  educ:    { dataset: 'demo_pjanedu',  probe: { sex:'T', isced11:'TOTAL', age:'TOTAL', unit:'NR' } },
   employ:  { dataset: 'lfsa_pgauws',   probe: { sex:'T', wstatus:'POP', deg_urb:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
   urban:   { dataset: 'lfsa_pgauws',   probe: null }, // same dataset as employ
   occup:   { dataset: 'lfsa_egais',    probe: { sex:'T', wstatus:'EMP', isco08:'TOTAL', age:'Y15-64', unit:'THS_PER' } },
@@ -324,7 +337,10 @@ function bandRange(code) {
   if (code === 'Y_GE65') return [65, 120];
   if (code === 'Y_GE75') return [75, 120];
   const m = code.match(/Y(\d+)-(\d+)/);
-  return m ? [+m[1], +m[2]] : null;
+  if (m) return [+m[1], +m[2]];
+  const ms = code.match(/^Y(\d+)$/);
+  if (ms) return [+ms[1], +ms[1]];
+  return null;
 }
 
 // --- State ---
@@ -561,32 +577,37 @@ async function fetchAllLfs(cc, year) {
 
   const sexArr = ['M','F'];
   const needEmployUrban = selected.includes('employ') || selected.includes('urban');
+  const minAge = +minAgeEl.value, maxAge = +maxAgeEl.value;
+
+  // Build single-year age array for education (demo_pjanedu supports Y0..Y99)
+  const educAges = [];
+  for (let a = Math.max(0, minAge); a <= Math.min(99, maxAge); a++) educAges.push('Y' + a);
 
   const fetches = {
-    educ: selected.includes('educ') ? fetchLfs('lfsa_pgaed', {
-      sex: sexArr, isced11: Object.keys(EDUC_LEVELS), age: LFS_AGE_BANDS,
-      geo: cc, unit: 'THS_PER', time: year
+    educ: selected.includes('educ') ? fetchLfs('demo_pjanedu', {
+      sex: sexArr, isced11: Object.keys(EDUC_LEVELS), age: educAges,
+      geo: cc, unit: 'NR', time: year
     }, ['sex','isced11','age']) : Promise.resolve(null),
 
     employUrban: needEmployUrban ? fetchLfs('lfsa_pgauws', {
       sex: sexArr, wstatus: Object.keys(EMPLOY_STATUSES),
-      deg_urb: Object.keys(URBAN_DEGREES), age: LFS_AGE_BANDS,
+      deg_urb: Object.keys(URBAN_DEGREES), age: DATASET_AGE_BANDS['lfsa_pgauws'],
       geo: cc, unit: 'THS_PER', time: year
     }, ['sex','wstatus','deg_urb','age']) : Promise.resolve(null),
 
     occup: selected.includes('occup') ? fetchLfs('lfsa_egais', {
       sex: sexArr, wstatus: 'EMP', isco08: Object.keys(ISCO_CODES),
-      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+      age: DATASET_AGE_BANDS['lfsa_egais'], geo: cc, unit: 'THS_PER', time: year
     }, ['sex','isco08','age']) : Promise.resolve(null),
 
     citizen: selected.includes('citizen') ? fetchLfs('lfsa_pganws', {
       sex: sexArr, citizen: Object.keys(CITIZEN_CODES), wstatus: 'POP',
-      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+      age: DATASET_AGE_BANDS['lfsa_pganws'], geo: cc, unit: 'THS_PER', time: year
     }, ['sex','citizen','age']) : Promise.resolve(null),
 
     cob: selected.includes('cob') ? fetchLfs('lfsa_pgacws', {
       sex: sexArr, c_birth: Object.keys(COB_CODES), wstatus: 'POP',
-      age: LFS_AGE_BANDS, geo: cc, unit: 'THS_PER', time: year
+      age: DATASET_AGE_BANDS['lfsa_pgacws'], geo: cc, unit: 'THS_PER', time: year
     }, ['sex','c_birth','age']) : Promise.resolve(null),
 
     hh: selected.includes('hh') ? fetchLfs('lfst_hhnhtych', {
@@ -664,8 +685,13 @@ function aggregatePop(sexFilter, ageBands, geoFilter) {
 
 // Aggregate LFS map values. keyPattern is a function(sex, age) -> key prefix to match.
 // The map keys are "dim1|dim2|...|age" where age is the last segment for sex-aware datasets.
-function aggregateLfsGeneric(map, sexes, minAge, maxAge, filterFn) {
+// Build set of all recognized age codes (bands + single-year Y0..Y99)
+const ALL_LFS_AGE_CODES = new Set([...LFS_AGE_BANDS, ...LFS_AGE_5Y]);
+for (let a = 0; a <= 99; a++) ALL_LFS_AGE_CODES.add('Y' + a);
+
+function aggregateLfsGeneric(map, sexes, minAge, maxAge, filterFn, multiplier) {
   if (!map) return 0;
+  if (multiplier === undefined) multiplier = 1000;
   let total = 0;
   for (const [key, val] of map) {
     if (!filterFn(key)) continue;
@@ -673,13 +699,13 @@ function aggregateLfsGeneric(map, sexes, minAge, maxAge, filterFn) {
     // Check sex filter: find M or F anywhere in parts
     const sexPart = parts.find(p => p === 'M' || p === 'F');
     if (sexPart && !sexes.includes(sexPart)) continue;
-    // Find age band anywhere in parts
-    const agePart = parts.find(p => LFS_AGE_BANDS.includes(p));
+    // Find age band anywhere in parts (support single-year, 5-year, and broad bands)
+    const agePart = parts.find(p => ALL_LFS_AGE_CODES.has(p));
     if (agePart) {
       const frac = lfsAgeFraction(agePart, minAge, maxAge);
-      if (frac > 0) total += val * 1000 * frac;
+      if (frac > 0) total += val * multiplier * frac;
     } else {
-      total += val * 1000; // no age dimension (e.g. household)
+      total += val * multiplier; // no age dimension (e.g. household)
     }
   }
   return Math.round(total);
@@ -745,7 +771,7 @@ function buildQuotas() {
   });
 
   // Helper for LFS-based tables
-  function buildLfsTable(sectionId, tableId, codes, labels, mapData, dimName) {
+  function buildLfsTable(sectionId, tableId, codes, labels, mapData, dimName, multiplier) {
     const section = document.getElementById(sectionId);
     if (!mapData || mapData.size === 0) { section.style.display = 'none'; return; }
 
@@ -754,7 +780,7 @@ function buildQuotas() {
       aggregateLfsGeneric(mapData, sexes, minAge, maxAge, key => {
         const parts = key.split('|');
         return parts.includes(code);
-      })
+      }, multiplier)
     );
     const total = pops.reduce((a,b) => a+b, 0);
     if (total === 0) { section.style.display = 'none'; return; }
@@ -771,9 +797,9 @@ function buildQuotas() {
 
   const selected = getSelectedExtras();
 
-  // Education
+  // Education (demo_pjanedu uses unit=NR, so multiplier=1)
   if (selected.includes('educ')) {
-    buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ);
+    buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ, null, 1);
   } else document.getElementById('educSection').style.display = 'none';
 
   // Occupation
@@ -878,20 +904,48 @@ function copyTable(tableId) {
   });
 }
 
-function downloadCSV(tableId, filename) {
-  const rows = [];
+function tableToAoa(tableId) {
+  const aoa = [];
   for (const tr of document.getElementById(tableId).querySelectorAll('tr')) {
-    const cells = [];
+    const row = [];
     for (const c of tr.querySelectorAll('th,td')) {
-      let t = c.textContent.replace(/"/g,'""');
-      if (t.includes(',') || t.includes('"') || t.includes('\n')) t = `"${t}"`;
-      cells.push(t);
+      const t = c.textContent.trim();
+      const n = Number(t.replace(/,/g, ''));
+      row.push(t !== '' && !isNaN(n) && !/%$/.test(t) ? n : t);
     }
-    rows.push(cells.join(','));
+    aoa.push(row);
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.join('\n')], { type:'text/csv' }));
-  a.download = filename; a.click();
+  return aoa;
+}
+
+function downloadXLSX(tableId, filename) {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(tableToAoa(tableId));
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  XLSX.writeFile(wb, filename);
+}
+
+function downloadAllXLSX() {
+  const wb = XLSX.utils.book_new();
+  const sections = resultsEl.querySelectorAll('.table-section');
+  const usedNames = new Set();
+  for (const sec of sections) {
+    if (sec.style.display === 'none') continue;
+    const table = sec.querySelector('table');
+    if (!table || !table.id || !table.innerHTML) continue;
+    let title = sec.querySelector('.table-header h2').textContent.trim()
+      .replace(/\s*\(.*\)/, '')           // strip parenthetical notes
+      .replace(/[:\\/?*\[\]]/g, '-')      // remove chars invalid in sheet names
+      .substring(0, 31);
+    // Ensure unique sheet name
+    let base = title;
+    for (let i = 2; usedNames.has(title); i++) title = base.substring(0, 28) + ' ' + i;
+    usedNames.add(title);
+    const ws = XLSX.utils.aoa_to_sheet(tableToAoa(table.id));
+    XLSX.utils.book_append_sheet(wb, ws, title);
+  }
+  if (wb.SheetNames.length === 0) return;
+  XLSX.writeFile(wb, 'all_quotas.xlsx');
 }
 
 // --- Events ---
