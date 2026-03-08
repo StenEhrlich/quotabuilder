@@ -770,10 +770,44 @@ function buildQuotas() {
     footer: ['Total','',fmt(totalPop),'100.0%',sampleSize], numCols:[2,3,4]
   });
 
+  // Check if user's age range fully covers at least one band from the given list
+  function checkAgeBands(bands) {
+    for (const band of bands) {
+      const r = bandRange(band);
+      if (!r) continue;
+      if (r[0] >= minAge && r[1] <= maxAge) return { ok: true };
+    }
+    // Find overlapping bands to show in the message
+    const overlapping = [];
+    for (const band of bands) {
+      const r = bandRange(band);
+      if (!r) continue;
+      const hi = Math.min(r[1], 120);
+      if (hi >= minAge && r[0] <= maxAge) {
+        overlapping.push(band === 'Y_GE65' ? '65+' : band === 'Y_GE90' ? '90+' : `${r[0]}-${r[1]}`);
+      }
+    }
+    return { ok: false, overlapping };
+  }
+
   // Helper for LFS-based tables
-  function buildLfsTable(sectionId, tableId, codes, labels, mapData, dimName, multiplier) {
+  function buildLfsTable(sectionId, tableId, codes, labels, mapData, dimName, multiplier, ageBands) {
     const section = document.getElementById(sectionId);
     if (!mapData || mapData.size === 0) { section.style.display = 'none'; return; }
+
+    // If ageBands provided, check that the user's range covers at least one full band
+    if (ageBands) {
+      const check = checkAgeBands(ageBands);
+      if (!check.ok) {
+        section.style.display = '';
+        document.getElementById(tableId).innerHTML =
+          `<tbody><tr><td style="padding:1.5rem;color:var(--text-muted);text-align:center;">` +
+          `Not applicable for ages ${minAge}\u2013${maxAge}. ` +
+          `Available age groups: ${check.overlapping.join(', ')}.` +
+          `</td></tr></tbody>`;
+        return;
+      }
+    }
 
     const codeKeys = Object.keys(codes);
     const pops = codeKeys.map(code =>
@@ -802,29 +836,29 @@ function buildQuotas() {
     buildLfsTable('educSection','educTable', EDUC_LEVELS, 'Education Level', lfsData.educ, null, 1);
   } else document.getElementById('educSection').style.display = 'none';
 
-  // Occupation
+  // Occupation (broad bands only)
   if (selected.includes('occup')) {
-    buildLfsTable('occupSection','occupTable', ISCO_CODES, 'Occupation', lfsData.occup);
+    buildLfsTable('occupSection','occupTable', ISCO_CODES, 'Occupation', lfsData.occup, null, undefined, DATASET_AGE_BANDS['lfsa_egais']);
   } else document.getElementById('occupSection').style.display = 'none';
 
-  // Citizenship
+  // Citizenship (5-year bands)
   if (selected.includes('citizen')) {
-    buildLfsTable('citizenSection','citizenTable', CITIZEN_CODES, 'Citizenship', lfsData.citizen);
+    buildLfsTable('citizenSection','citizenTable', CITIZEN_CODES, 'Citizenship', lfsData.citizen, null, undefined, DATASET_AGE_BANDS['lfsa_pganws']);
   } else document.getElementById('citizenSection').style.display = 'none';
 
-  // Country of birth
+  // Country of birth (5-year bands)
   if (selected.includes('cob')) {
-    buildLfsTable('cobSection','cobTable', COB_CODES, 'Country of Birth', lfsData.cob);
+    buildLfsTable('cobSection','cobTable', COB_CODES, 'Country of Birth', lfsData.cob, null, undefined, DATASET_AGE_BANDS['lfsa_pgacws']);
   } else document.getElementById('cobSection').style.display = 'none';
 
-  // Employment
+  // Employment (5-year bands)
   if (selected.includes('employ')) {
-    buildLfsTable('employSection','employTable', EMPLOY_STATUSES, 'Employment Status', lfsData.employUrban);
+    buildLfsTable('employSection','employTable', EMPLOY_STATUSES, 'Employment Status', lfsData.employUrban, null, undefined, DATASET_AGE_BANDS['lfsa_pgauws']);
   } else document.getElementById('employSection').style.display = 'none';
 
-  // Urbanisation
+  // Urbanisation (5-year bands)
   if (selected.includes('urban')) {
-    buildLfsTable('urbanSection','urbanTable', URBAN_DEGREES, 'Urbanisation', lfsData.employUrban);
+    buildLfsTable('urbanSection','urbanTable', URBAN_DEGREES, 'Urbanisation', lfsData.employUrban, null, undefined, DATASET_AGE_BANDS['lfsa_pgauws']);
   } else document.getElementById('urbanSection').style.display = 'none';
 
   // Household composition
